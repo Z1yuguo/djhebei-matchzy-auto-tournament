@@ -516,7 +516,7 @@ export default function Layout() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box component="img" src="/icon.svg" alt="Logo" sx={{ width: 32, height: 32 }} />
               <Typography variant="body2" noWrap component="div" sx={{ fontWeight: 600 }}>
-                Matchzy Auto Tournament
+                DJHebei's MatchZy
               </Typography>
             </Box>
             <IconButton onClick={handleDrawerClose}>

@@ -211,7 +211,7 @@ export const SharedNavBar: React.FC<SharedNavBarProps> = ({
           <Box
             component="img"
             src="/icon.svg"
-            alt="Matchzy Auto Tournament"
+            alt="DJHebei's MatchZy"
             sx={{ height: 32 }}
           />
         </Box>
