@@ -41,8 +41,35 @@ export interface Server {
   matchzy_db_last_seen_at?: number | null;
   /** Unix timestamp when server last successfully sent any event to /api/events. */
   server_can_reach_api_at?: number | null;
+  /** Numeric index used by cs2-server-manager's tmux session name (cs2-<N>). */
+  csm_index?: number | null;
+  /** SSH host for the web terminal (defaults to `host` if not set). */
+  ssh_host?: string | null;
+  /** SSH port (defaults to 22 if not set). */
+  ssh_port?: number | null;
+  /** SSH username. */
+  ssh_username?: string | null;
+  /** 'password' | 'private_key' */
+  ssh_auth_method?: SshAuthMethod | null;
+  ssh_password?: string | null;
+  ssh_private_key?: string | null;
+  ssh_passphrase?: string | null;
   created_at: number;
   updated_at: number;
+}
+
+export type SshAuthMethod = 'password' | 'private_key';
+
+/** SSH console connection details, used to attach to a server's cs2-<N> tmux session. */
+export interface SshConsoleConfig {
+  csmIndex: number;
+  sshHost: string;
+  sshPort: number;
+  sshUsername: string;
+  sshAuthMethod: SshAuthMethod;
+  sshPassword?: string | null;
+  sshPrivateKey?: string | null;
+  sshPassphrase?: string | null;
 }
 
 export interface CreateServerInput {
@@ -53,6 +80,14 @@ export interface CreateServerInput {
   password: string;
   enabled?: boolean; // Optional, defaults to true
   matchzyConfig?: MatchzyServerConfigInput;
+  csmIndex?: number | null;
+  sshHost?: string | null;
+  sshPort?: number | null;
+  sshUsername?: string | null;
+  sshAuthMethod?: SshAuthMethod | null;
+  sshPassword?: string | null;
+  sshPrivateKey?: string | null;
+  sshPassphrase?: string | null;
 }
 
 export interface UpdateServerInput {
@@ -62,6 +97,14 @@ export interface UpdateServerInput {
   password?: string;
   enabled?: boolean;
   matchzyConfig?: MatchzyServerConfigInput | null;
+  csmIndex?: number | null;
+  sshHost?: string | null;
+  sshPort?: number | null;
+  sshUsername?: string | null;
+  sshAuthMethod?: SshAuthMethod | null;
+  sshPassword?: string | null;
+  sshPrivateKey?: string | null;
+  sshPassphrase?: string | null;
 }
 
 export interface BatchUpdateInput {
@@ -112,6 +155,17 @@ export interface ServerResponse {
   matchzyDbLastSeenAt?: number | null;
   /** Unix timestamp when server last successfully sent any event to /api/events. */
   serverCanReachApiAt?: number | null;
+  /** Numeric index used by cs2-server-manager's tmux session name (cs2-<N>). Null if SSH console isn't configured. */
+  csmIndex?: number | null;
+  sshHost?: string | null;
+  sshPort?: number | null;
+  sshUsername?: string | null;
+  sshAuthMethod?: SshAuthMethod | null;
+  sshPassword?: string | null;
+  sshPrivateKey?: string | null;
+  sshPassphrase?: string | null;
+  /** True when enough SSH console fields are set to attempt a terminal connection. */
+  sshConsoleEnabled?: boolean;
 }
 
 /**

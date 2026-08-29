@@ -77,7 +77,9 @@
       "configuring": "正在配置新服务器（通过 RCON 发送 MatchZy 配置）…",
       "done": "新服务器已配置，正在刷新状态…"
     },
-    "checkServerLogs": "请查看游戏服务器控制台/日志，确认 MatchZy 是否收到配置并发送事件。"
+    "checkServerLogs": "请查看游戏服务器控制台/日志，确认 MatchZy 是否收到配置并发送事件。",
+    "consoleTooltip": "Open live server console (SSH)",
+    "consoleDialogTitle": "Console — {{name}}"
   },
   "serverModal": {
     "titleCreate": "新增服务器",
@@ -142,6 +144,22 @@
     "confirmDelete": {
       "title": "删除服务器",
       "message": "确定要删除 “{{name}}” 吗？该操作无法撤销。"
+    },
+    "ssh": {
+      "enabledLabel": "SSH Console (optional)",
+      "enabledHelper": "Attach to this server's live tmux console from the browser (requires cs2-server-manager and SSH access - a much more powerful credential than the RCON password above).",
+      "csmIndexLabel": "csm Server Index",
+      "csmIndexHelper": "The numeric N csm uses for this server (tmux session cs2-N, e.g. \"sudo csm attach N\")",
+      "hostLabel": "SSH Host",
+      "hostPlaceholder": "Defaults to the RCON host above",
+      "portLabel": "SSH Port",
+      "usernameLabel": "SSH Username",
+      "authMethodLabel": "Authentication method",
+      "authMethodPassword": "Password",
+      "authMethodKey": "Private Key",
+      "passwordLabel": "SSH Password",
+      "privateKeyLabel": "SSH Private Key (PEM)",
+      "passphraseLabel": "Key Passphrase (optional)"
     }
   },
   "adminToolsPage": {
@@ -184,7 +202,31 @@
     "monitoring": {
       "title": "监控与日志",
       "serverEvents": "服务器事件监控",
-      "appLogs": "应用日志"
+      "appLogs": "应用日志",
+      "matchConfigEditor": "MatchZy Config Editor"
     }
+  },
+  "matchConfigEditor": {
+    "description": "View and edit the raw MatchZy match config JSON for any match, then optionally push it to the assigned server.",
+    "matchSelectLabel": "Match",
+    "refresh": "Refresh",
+    "save": "Save",
+    "loadOnServer": "Load on server",
+    "errors": {
+      "loadMatchesFailed": "Failed to load matches",
+      "loadConfigFailed": "Failed to load config",
+      "invalidJson": "Invalid JSON",
+      "saveFailed": "Failed to save config",
+      "loadOnServerFailed": "Failed to load on server"
+    },
+    "success": {
+      "saved": "Config saved",
+      "loaded": "Config loaded on server"
+    }
+  },
+  "serverTerminal": {
+    "connecting": "Connecting to server console…",
+    "sessionClosed": "Console session closed.",
+    "connectionFailed": "Failed to connect"
   }
 }

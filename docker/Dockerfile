@@ -105,8 +105,19 @@ ENV NODE_ENV=production
 # Copy package.json (needed for version info at runtime)
 COPY --from=build /app/package.json ./
 
-# ⬇️ NO node_modules needed! Backend is bundled with esbuild
-# The bundled dist/index.js contains all dependencies
+# ⬇️ Backend is bundled with esbuild, so almost no node_modules are needed.
+# Exception: ssh2 (admin SSH terminal) ships an optional native crypto add-on
+# (sshcrypto.node via the optional cpu-features dep) that esbuild can't bundle,
+# so it's marked external and resolved via require() at runtime instead. It
+# falls back to pure-JS crypto when the native binding is absent (see
+# ssh2/lib/protocol/crypto.js), so we only need ssh2's pure-JS runtime deps
+# here - not cpu-features itself. (Verified minimal set via `require('ssh2')`
+# in isolation: ssh2 -> asn1 -> safer-buffer, ssh2 -> bcrypt-pbkdf -> tweetnacl.)
+COPY --from=deps /app/node_modules/ssh2 ./node_modules/ssh2
+COPY --from=deps /app/node_modules/asn1 ./node_modules/asn1
+COPY --from=deps /app/node_modules/bcrypt-pbkdf ./node_modules/bcrypt-pbkdf
+COPY --from=deps /app/node_modules/safer-buffer ./node_modules/safer-buffer
+COPY --from=deps /app/node_modules/tweetnacl ./node_modules/tweetnacl
 
 # Copy built application (bundled backend + frontend)
 # Backend is built into /app/api/dist and frontend into /app/api/public

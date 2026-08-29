@@ -14,6 +14,10 @@ import {
   IconButton,
   CircularProgress,
   Alert,
+  Divider,
+  RadioGroup,
+  Radio,
+  FormLabel,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -58,6 +62,19 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // SSH console (optional) - lets admins attach to the server's cs2-<N> tmux
+  // console session (via cs2-server-manager) from the browser.
+  const [sshEnabled, setSshEnabled] = useState(false);
+  const [csmIndex, setCsmIndex] = useState('');
+  const [sshHost, setSshHost] = useState('');
+  const [sshPort, setSshPort] = useState('22');
+  const [sshUsername, setSshUsername] = useState('');
+  const [sshAuthMethod, setSshAuthMethod] = useState<'password' | 'private_key'>('password');
+  const [sshPassword, setSshPassword] = useState('');
+  const [sshPrivateKey, setSshPrivateKey] = useState('');
+  const [sshPassphrase, setSshPassphrase] = useState('');
+  const [showSshPassword, setShowSshPassword] = useState(false);
+
   const isEditing = !!server;
   const { t } = useTranslation();
 
@@ -68,6 +85,15 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
       setPort(server.port.toString());
       setPassword(server.password);
       setEnabled(server.enabled);
+      setSshEnabled(!!server.sshConsoleEnabled || !!server.csmIndex);
+      setCsmIndex(server.csmIndex != null ? String(server.csmIndex) : '');
+      setSshHost(server.sshHost || '');
+      setSshPort(server.sshPort != null ? String(server.sshPort) : '22');
+      setSshUsername(server.sshUsername || '');
+      setSshAuthMethod(server.sshAuthMethod || 'password');
+      setSshPassword(server.sshPassword || '');
+      setSshPrivateKey(server.sshPrivateKey || '');
+      setSshPassphrase(server.sshPassphrase || '');
     } else {
       resetForm();
     }
@@ -80,6 +106,15 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
     setPassword('');
     setEnabled(true);
     setError('');
+    setSshEnabled(false);
+    setCsmIndex('');
+    setSshHost('');
+    setSshPort('22');
+    setSshUsername('');
+    setSshAuthMethod('password');
+    setSshPassword('');
+    setSshPrivateKey('');
+    setSshPassphrase('');
   };
 
   const handleNameChange = (value: string) => {
@@ -153,6 +188,28 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
       }
 
       console.log('Creating payload for server:', serverId);
+      const sshFields = sshEnabled
+        ? {
+            csmIndex: csmIndex.trim() ? parseInt(csmIndex, 10) : null,
+            sshHost: sshHost.trim() || null,
+            sshPort: sshPort.trim() ? parseInt(sshPort, 10) : null,
+            sshUsername: sshUsername.trim() || null,
+            sshAuthMethod,
+            sshPassword: sshAuthMethod === 'password' ? sshPassword : null,
+            sshPrivateKey: sshAuthMethod === 'private_key' ? sshPrivateKey : null,
+            sshPassphrase: sshAuthMethod === 'private_key' ? sshPassphrase || null : null,
+          }
+        : {
+            csmIndex: null,
+            sshHost: null,
+            sshPort: null,
+            sshUsername: null,
+            sshAuthMethod: null,
+            sshPassword: null,
+            sshPrivateKey: null,
+            sshPassphrase: null,
+          };
+
       const payload = {
         id: serverId,
         name: name.trim(),
@@ -161,6 +218,7 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
         password: password.trim(),
         enabled,
         matchzyConfig: null,
+        ...sshFields,
       };
 
       if (isEditing) {
@@ -172,6 +230,7 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
           password: payload.password,
           enabled: payload.enabled,
           matchzyConfig: payload.matchzyConfig,
+          ...sshFields,
         });
         console.log('Server updated successfully');
         showSuccess(t('serverModal.success.serverUpdated'));
@@ -397,6 +456,133 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
                 </Box>
               }
             />
+
+            <Divider sx={{ mt: 1 }} />
+
+            <FormControlLabel
+              control={<Switch checked={sshEnabled} onChange={(e) => setSshEnabled(e.target.checked)} />}
+              label={
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>
+                    {t('serverModal.ssh.enabledLabel', 'SSH Console (optional)')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t(
+                      'serverModal.ssh.enabledHelper',
+                      'Attach to this server\'s live tmux console from the browser (requires cs2-server-manager and SSH access - a much more powerful credential than the RCON password above).'
+                    )}
+                  </Typography>
+                </Box>
+              }
+            />
+
+            {sshEnabled && (
+              <Box display="flex" flexDirection="column" gap={2} pl={1}>
+                <TextField
+                  label={t('serverModal.ssh.csmIndexLabel', 'csm Server Index')}
+                  value={csmIndex}
+                  onChange={(e) => setCsmIndex(e.target.value)}
+                  placeholder="1"
+                  type="number"
+                  fullWidth
+                  helperText={t(
+                    'serverModal.ssh.csmIndexHelper',
+                    'The numeric N csm uses for this server (tmux session cs2-N, e.g. "sudo csm attach N")'
+                  )}
+                />
+
+                <Box display="flex" gap={2}>
+                  <TextField
+                    label={t('serverModal.ssh.hostLabel', 'SSH Host')}
+                    value={sshHost}
+                    onChange={(e) => setSshHost(e.target.value)}
+                    placeholder={t('serverModal.ssh.hostPlaceholder', 'Defaults to the RCON host above')}
+                    fullWidth
+                  />
+                  <TextField
+                    label={t('serverModal.ssh.portLabel', 'SSH Port')}
+                    value={sshPort}
+                    onChange={(e) => setSshPort(e.target.value)}
+                    type="number"
+                    sx={{ maxWidth: 140 }}
+                  />
+                </Box>
+
+                <TextField
+                  label={t('serverModal.ssh.usernameLabel', 'SSH Username')}
+                  value={sshUsername}
+                  onChange={(e) => setSshUsername(e.target.value)}
+                  placeholder="root"
+                  fullWidth
+                />
+
+                <Box>
+                  <FormLabel component="legend" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
+                    {t('serverModal.ssh.authMethodLabel', 'Authentication method')}
+                  </FormLabel>
+                  <RadioGroup
+                    row
+                    value={sshAuthMethod}
+                    onChange={(e) => setSshAuthMethod(e.target.value as 'password' | 'private_key')}
+                  >
+                    <FormControlLabel
+                      value="password"
+                      control={<Radio size="small" />}
+                      label={t('serverModal.ssh.authMethodPassword', 'Password')}
+                    />
+                    <FormControlLabel
+                      value="private_key"
+                      control={<Radio size="small" />}
+                      label={t('serverModal.ssh.authMethodKey', 'Private Key')}
+                    />
+                  </RadioGroup>
+                </Box>
+
+                {sshAuthMethod === 'password' ? (
+                  <TextField
+                    label={t('serverModal.ssh.passwordLabel', 'SSH Password')}
+                    value={sshPassword}
+                    onChange={(e) => setSshPassword(e.target.value)}
+                    type={showSshPassword ? 'text' : 'password'}
+                    fullWidth
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle ssh password visibility"
+                            onClick={() => setShowSshPassword(!showSshPassword)}
+                            edge="end"
+                          >
+                            {showSshPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                ) : (
+                  <>
+                    <TextField
+                      label={t('serverModal.ssh.privateKeyLabel', 'SSH Private Key (PEM)')}
+                      value={sshPrivateKey}
+                      onChange={(e) => setSshPrivateKey(e.target.value)}
+                      placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
+                      multiline
+                      minRows={4}
+                      maxRows={8}
+                      fullWidth
+                      sx={{ fontFamily: 'monospace' }}
+                    />
+                    <TextField
+                      label={t('serverModal.ssh.passphraseLabel', 'Key Passphrase (optional)')}
+                      value={sshPassphrase}
+                      onChange={(e) => setSshPassphrase(e.target.value)}
+                      type="password"
+                      fullWidth
+                    />
+                  </>
+                )}
+              </Box>
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>

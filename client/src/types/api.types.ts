@@ -59,6 +59,17 @@ export interface Server {
   matchzyDbLastSeenAt?: number | null;
   /** Unix timestamp when server last successfully sent any event to /api/events. */
   serverCanReachApiAt?: number | null;
+  /** Numeric index used by cs2-server-manager's tmux session name (cs2-<N>). */
+  csmIndex?: number | null;
+  sshHost?: string | null;
+  sshPort?: number | null;
+  sshUsername?: string | null;
+  sshAuthMethod?: 'password' | 'private_key' | null;
+  sshPassword?: string | null;
+  sshPrivateKey?: string | null;
+  sshPassphrase?: string | null;
+  /** True when enough SSH console fields are set to attempt a terminal connection. */
+  sshConsoleEnabled?: boolean;
   // Optional real-time status values reported by the MatchZy plugin and
   // allocator. These are populated by /api/servers/:id/status and are used
   // purely for UI display on the Servers page.

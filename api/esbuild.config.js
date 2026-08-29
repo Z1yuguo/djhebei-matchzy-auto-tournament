@@ -66,6 +66,11 @@ async function build() {
     // Keep native modules external - they can't be bundled
     'pg-native',
     'better-sqlite3',
+    // ssh2 (admin SSH terminal) ships an optional native crypto binding via
+    // cpu-features; esbuild can't bundle the .node binary, so keep both external
+    // and let Node's normal require() resolve them from node_modules at runtime.
+    'ssh2',
+    'cpu-features',
   ],
   minify: isProduction,
   sourcemap: !isProduction,

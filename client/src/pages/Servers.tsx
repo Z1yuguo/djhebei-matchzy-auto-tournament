@@ -12,12 +12,16 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import UpdateIcon from '@mui/icons-material/Update';
 import DnsIcon from '@mui/icons-material/Dns';
 import ReplayIcon from '@mui/icons-material/Replay';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import CloseIcon from '@mui/icons-material/Close';
+import { Dialog, DialogTitle, DialogContent } from '@mui/material';
 import { api } from '../utils/api';
 import ServerModal from '../components/modals/ServerModal';
 import BatchServerModal from '../components/modals/BatchServerModal';
 import MatchDetailsModal from '../components/modals/MatchDetailsModal';
 import { EmptyState } from '../components/shared/EmptyState';
 import ConfirmDialog from '../components/modals/ConfirmDialog';
+import { ServerTerminal } from '../components/admin/ServerTerminal';
 import type { Match, Server, ServersResponse, ServerStatusResponse, MatchesResponse } from '../types';
 import { useSnackbar } from '../contexts/SnackbarContext';
 import { getRoundLabel } from '../utils/matchUtils';
@@ -30,6 +34,7 @@ export default function Servers() {
   const { showError, showSnackbar, showPersistentError, closeSnackbar } = useSnackbar();
   const [modalOpen, setModalOpen] = useState(false);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [terminalServer, setTerminalServer] = useState<Server | null>(null);
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -1562,6 +1567,22 @@ export default function Servers() {
                           )}
                         </IconButton>
                       </Tooltip>
+                      {server.sshConsoleEnabled && (
+                        <Tooltip title={t('serversPage.consoleTooltip', 'Open live server console (SSH)')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => setTerminalServer(server)}
+                            sx={{
+                              ml: 0.5,
+                              '&:hover': {
+                                backgroundColor: 'action.hover',
+                              },
+                            }}
+                          >
+                            <TerminalIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Box>
 
                     <Box display="flex" flexDirection="column" gap={0.5} mb={2}>
@@ -1815,6 +1836,32 @@ export default function Servers() {
           onClose={() => setSelectedMatch(null)}
         />
       )}
+
+      <Dialog
+        open={!!terminalServer}
+        onClose={() => setTerminalServer(null)}
+        fullWidth
+        maxWidth="lg"
+        slotProps={{ paper: { sx: { height: '80vh' } } }}
+      >
+        <DialogTitle
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            {t('serversPage.consoleDialogTitle', 'Console — {{name}}', {
+              name: terminalServer?.name || '',
+            })}
+          </Typography>
+          <IconButton onClick={() => setTerminalServer(null)} size="small" aria-label="close">
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, pb: 2 }}>
+          {terminalServer && (
+            <ServerTerminal serverId={terminalServer.id} active={!!terminalServer} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={selectionMode && bulkDeleteConfirmOpen}

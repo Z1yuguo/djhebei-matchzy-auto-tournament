@@ -90,6 +90,14 @@ export class ServerService {
       password: input.password,
       enabled: input.enabled !== undefined ? (input.enabled ? 1 : 0) : 1,
       matchzy_config: matchzyConfig,
+      csm_index: input.csmIndex ?? null,
+      ssh_host: input.sshHost ?? null,
+      ssh_port: input.sshPort ?? null,
+      ssh_username: input.sshUsername ?? null,
+      ssh_auth_method: input.sshAuthMethod ?? null,
+      ssh_password: input.sshPassword ?? null,
+      ssh_private_key: input.sshPrivateKey ?? null,
+      ssh_passphrase: input.sshPassphrase ?? null,
     });
 
     log.serverCreated(input.id, input.name);
@@ -141,6 +149,15 @@ export class ServerService {
         input.matchzyConfig && Object.keys(input.matchzyConfig).length > 0;
       updateData.matchzy_config = hasKeys ? JSON.stringify(input.matchzyConfig) : null;
     }
+
+    if (input.csmIndex !== undefined) updateData.csm_index = input.csmIndex;
+    if (input.sshHost !== undefined) updateData.ssh_host = input.sshHost;
+    if (input.sshPort !== undefined) updateData.ssh_port = input.sshPort;
+    if (input.sshUsername !== undefined) updateData.ssh_username = input.sshUsername;
+    if (input.sshAuthMethod !== undefined) updateData.ssh_auth_method = input.sshAuthMethod;
+    if (input.sshPassword !== undefined) updateData.ssh_password = input.sshPassword;
+    if (input.sshPrivateKey !== undefined) updateData.ssh_private_key = input.sshPrivateKey;
+    if (input.sshPassphrase !== undefined) updateData.ssh_passphrase = input.sshPassphrase;
 
     await db.updateAsync('servers', updateData, 'id = ?', [id]);
 
@@ -285,6 +302,21 @@ export class ServerService {
       matchzyDbLastOkAt: server.matchzy_db_last_ok_at ?? null,
       matchzyDbLastSeenAt: server.matchzy_db_last_seen_at ?? null,
       serverCanReachApiAt: server.server_can_reach_api_at ?? null,
+      csmIndex: server.csm_index ?? null,
+      sshHost: server.ssh_host ?? null,
+      sshPort: server.ssh_port ?? null,
+      sshUsername: server.ssh_username ?? null,
+      sshAuthMethod: server.ssh_auth_method ?? null,
+      sshPassword: server.ssh_password ?? null,
+      sshPrivateKey: server.ssh_private_key ?? null,
+      sshPassphrase: server.ssh_passphrase ?? null,
+      sshConsoleEnabled: Boolean(
+        server.csm_index &&
+          server.ssh_host &&
+          server.ssh_username &&
+          server.ssh_auth_method &&
+          (server.ssh_auth_method === 'password' ? server.ssh_password : server.ssh_private_key)
+      ),
     };
   }
 }

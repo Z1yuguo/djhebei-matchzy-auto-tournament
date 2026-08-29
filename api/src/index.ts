@@ -14,6 +14,7 @@ import { swaggerSpec } from './config/swagger';
 import { log, logger, LOG_HTTP_REQUESTS, LOG_DB_VERBOSE, LOG_DB_VALUES } from './utils/logger';
 import { cleanupOldLogs } from './utils/eventLogger';
 import { initializeSocket } from './services/socketService';
+import { initializeTerminalNamespace } from './services/terminalSocketService';
 import { serverService } from './services/serverService';
 import { rconService } from './services/rconService';
 import { settingsService } from './services/settingsService';
@@ -404,7 +405,8 @@ app.use((_req: Request, res: Response) => {
 
 // Start server
 // Initialize Socket.io
-initializeSocket(httpServer);
+const io = initializeSocket(httpServer);
+initializeTerminalNamespace(io);
 
 // Cleanup old event logs (keep last 30 days)
 cleanupOldLogs(30);

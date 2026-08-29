@@ -77,7 +77,9 @@
       "configuring": "Konfigurowanie nowych serwerów (wysyłanie konfiguracji MatchZy przez RCON)…",
       "done": "Nowe serwery skonfigurowane. Odświeżanie statusu…"
     },
-    "checkServerLogs": "Sprawdź konsolę/logi serwera gry, aby zobaczyć, czy MatchZy odbiera konfigurację i wysyła zdarzenia."
+    "checkServerLogs": "Sprawdź konsolę/logi serwera gry, aby zobaczyć, czy MatchZy odbiera konfigurację i wysyła zdarzenia.",
+    "consoleTooltip": "Open live server console (SSH)",
+    "consoleDialogTitle": "Console — {{name}}"
   },
   "serverModal": {
     "titleCreate": "Dodaj serwer",
@@ -142,6 +144,22 @@
     "confirmDelete": {
       "title": "Usuń serwer",
       "message": "Czy na pewno chcesz usunąć \"{{name}}\"? Tej akcji nie można cofnąć."
+    },
+    "ssh": {
+      "enabledLabel": "SSH Console (optional)",
+      "enabledHelper": "Attach to this server's live tmux console from the browser (requires cs2-server-manager and SSH access - a much more powerful credential than the RCON password above).",
+      "csmIndexLabel": "csm Server Index",
+      "csmIndexHelper": "The numeric N csm uses for this server (tmux session cs2-N, e.g. \"sudo csm attach N\")",
+      "hostLabel": "SSH Host",
+      "hostPlaceholder": "Defaults to the RCON host above",
+      "portLabel": "SSH Port",
+      "usernameLabel": "SSH Username",
+      "authMethodLabel": "Authentication method",
+      "authMethodPassword": "Password",
+      "authMethodKey": "Private Key",
+      "passwordLabel": "SSH Password",
+      "privateKeyLabel": "SSH Private Key (PEM)",
+      "passphraseLabel": "Key Passphrase (optional)"
     }
   },
   "adminToolsPage": {
@@ -184,7 +202,31 @@
     "monitoring": {
       "title": "Monitoring i logi",
       "serverEvents": "Monitor zdarzeń serwera",
-      "appLogs": "Logi aplikacji"
+      "appLogs": "Logi aplikacji",
+      "matchConfigEditor": "MatchZy Config Editor"
     }
+  },
+  "matchConfigEditor": {
+    "description": "View and edit the raw MatchZy match config JSON for any match, then optionally push it to the assigned server.",
+    "matchSelectLabel": "Match",
+    "refresh": "Refresh",
+    "save": "Save",
+    "loadOnServer": "Load on server",
+    "errors": {
+      "loadMatchesFailed": "Failed to load matches",
+      "loadConfigFailed": "Failed to load config",
+      "invalidJson": "Invalid JSON",
+      "saveFailed": "Failed to save config",
+      "loadOnServerFailed": "Failed to load on server"
+    },
+    "success": {
+      "saved": "Config saved",
+      "loaded": "Config loaded on server"
+    }
+  },
+  "serverTerminal": {
+    "connecting": "Connecting to server console…",
+    "sessionClosed": "Console session closed.",
+    "connectionFailed": "Failed to connect"
   }
 }

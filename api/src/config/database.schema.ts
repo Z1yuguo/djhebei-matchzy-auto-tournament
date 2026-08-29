@@ -34,10 +34,18 @@ export function getSchemaSQL(): string {
       matchzy_db_last_ok_at INTEGER, -- Unix timestamp when DB was last reported OK
       matchzy_db_last_seen_at INTEGER, -- Unix timestamp when DB health was last reported
       server_can_reach_api_at INTEGER, -- Unix timestamp when server last successfully sent any event to /api/events
+      csm_index INTEGER, -- Numeric server index used by cs2-server-manager's tmux session name (cs2-<N>)
+      ssh_host TEXT, -- SSH host for the web terminal (defaults to host column if not set)
+      ssh_port INTEGER, -- SSH port (defaults to 22 if not set)
+      ssh_username TEXT, -- SSH username (e.g. the csm/cs2 service user, or root)
+      ssh_auth_method TEXT, -- 'password' | 'private_key'
+      ssh_password TEXT, -- SSH password (when ssh_auth_method = 'password')
+      ssh_private_key TEXT, -- SSH private key PEM (when ssh_auth_method = 'private_key')
+      ssh_passphrase TEXT, -- Optional passphrase for the private key
       created_at INTEGER NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::INTEGER,
       updated_at INTEGER NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::INTEGER
     );
-    
+
     CREATE INDEX IF NOT EXISTS idx_servers_status ON servers(status);
     CREATE INDEX IF NOT EXISTS idx_servers_last_seen ON servers(last_seen);
 

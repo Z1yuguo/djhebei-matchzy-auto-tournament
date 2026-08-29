@@ -28,6 +28,7 @@ import { ADMIN_COMMAND_CATEGORIES, type AdminCommand } from '../constants/adminC
 import { useAdminCommands } from '../hooks/useAdminCommands';
 import { ServerEventsMonitor } from '../components/admin/ServerEventsMonitor';
 import { LogViewer } from '../components/admin/LogViewer';
+import { MatchConfigEditor } from '../components/admin/MatchConfigEditor';
 import { useSnackbar } from '../contexts/SnackbarContext';
 import { useTranslation } from 'react-i18next';
 
@@ -450,8 +451,20 @@ const AdminTools: React.FC = () => {
         {t('adminToolsPage.monitoring.title')}
       </Typography>
 
-      {/* Server Events Monitor */}
+      {/* Match Config Editor */}
       <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6">
+            {t('adminToolsPage.monitoring.matchConfigEditor', 'MatchZy Config Editor')}
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <MatchConfigEditor />
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Server Events Monitor */}
+      <Accordion sx={{ mt: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">
             {t('adminToolsPage.monitoring.serverEvents')}

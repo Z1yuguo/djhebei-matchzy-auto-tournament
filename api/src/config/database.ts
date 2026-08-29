@@ -168,6 +168,14 @@ class DatabaseManager {
         { table: 'servers', column: 'matchzy_db_last_ok_at', type: 'INTEGER' },
         { table: 'servers', column: 'matchzy_db_last_seen_at', type: 'INTEGER' },
         { table: 'servers', column: 'server_can_reach_api_at', type: 'INTEGER' },
+        { table: 'servers', column: 'csm_index', type: 'INTEGER' },
+        { table: 'servers', column: 'ssh_host', type: 'TEXT' },
+        { table: 'servers', column: 'ssh_port', type: 'INTEGER' },
+        { table: 'servers', column: 'ssh_username', type: 'TEXT' },
+        { table: 'servers', column: 'ssh_auth_method', type: 'TEXT' },
+        { table: 'servers', column: 'ssh_password', type: 'TEXT' },
+        { table: 'servers', column: 'ssh_private_key', type: 'TEXT' },
+        { table: 'servers', column: 'ssh_passphrase', type: 'TEXT' },
       ];
 
       // Check if tournament_templates table exists, create if not

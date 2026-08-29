@@ -23,7 +23,7 @@ import { shouldBlockAdminAsDirectAccess } from '../utils/canonicalOrigin';
  * Otherwise we always run full auth (session + cookie fallback) so the alternative
  * admin check is never skipped.
  */
-async function checkAdminBySteamId(steamId: string): Promise<boolean> {
+export async function checkAdminBySteamId(steamId: string): Promise<boolean> {
   const row = await db.queryOneAsync<{ is_admin?: number }>(
     'SELECT is_admin FROM players WHERE id = ?',
     [steamId]

@@ -1462,6 +1462,99 @@ router.patch('/:slug/status', requireAuth, async (req: Request, res: Response) =
 });
 
 /**
+ * PATCH /api/matches/:slug/config
+ * View/edit the raw MatchZy match config JSON stored for a match (authenticated).
+ * Accepts a full or partial MatchConfig object and merges it over the stored
+ * config. Does NOT push it to the server - use POST /:slug/load for that.
+ */
+router.patch('/:slug/config', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const patch = req.body as Partial<MatchConfig> | undefined;
+
+    if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Request body must be a MatchConfig JSON object',
+      });
+    }
+
+    const match = await db.queryOneAsync<DbMatchRow>('SELECT * FROM matches WHERE slug = ?', [
+      slug,
+    ]);
+    if (!match) {
+      return res.status(404).json({
+        success: false,
+        error: `Match '${slug}' not found`,
+      });
+    }
+
+    let existingConfig: Partial<MatchConfig> = {};
+    try {
+      existingConfig = match.config ? (JSON.parse(match.config) as Partial<MatchConfig>) : {};
+    } catch {
+      existingConfig = {};
+    }
+
+    const mergedConfig: Partial<MatchConfig> = { ...existingConfig, ...patch };
+
+    // Light validation of the fields MatchZy actually requires to load a config.
+    const errors: string[] = [];
+    if (mergedConfig.team1 && typeof mergedConfig.team1.name !== 'string') {
+      errors.push('team1.name must be a string');
+    }
+    if (mergedConfig.team2 && typeof mergedConfig.team2.name !== 'string') {
+      errors.push('team2.name must be a string');
+    }
+    if (mergedConfig.num_maps !== undefined && !Number.isInteger(mergedConfig.num_maps)) {
+      errors.push('num_maps must be an integer');
+    }
+    if (
+      mergedConfig.maplist !== undefined &&
+      mergedConfig.maplist !== null &&
+      !Array.isArray(mergedConfig.maplist)
+    ) {
+      errors.push('maplist must be an array of map names or null');
+    }
+    if (mergedConfig.cvars !== undefined && typeof mergedConfig.cvars !== 'object') {
+      errors.push('cvars must be an object');
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid MatchConfig',
+        details: errors,
+      });
+    }
+
+    await db.updateAsync(
+      'matches',
+      { config: JSON.stringify(mergedConfig), updated_at: Math.floor(Date.now() / 1000) },
+      'slug = ?',
+      [slug]
+    );
+
+    log.info(`[MATCH CONFIG] Updated stored config for match ${slug}`, {
+      changedKeys: Object.keys(patch),
+    });
+
+    return res.json({
+      success: true,
+      message: 'Match config updated',
+      config: mergedConfig,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to update match config';
+    console.error('Error updating match config:', error);
+    return res.status(500).json({
+      success: false,
+      error: message,
+    });
+  }
+});
+
+/**
  * POST /api/matches/:slug/force-cancel
  * Force cancel a match even if the server is unreachable (authenticated)
  * This will:
