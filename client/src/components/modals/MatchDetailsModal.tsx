@@ -27,6 +27,7 @@ import MapIcon from '@mui/icons-material/Map';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CodeIcon from '@mui/icons-material/Code';
+import DownloadIcon from '@mui/icons-material/Download';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   formatDate,
@@ -50,6 +51,7 @@ import { MapChipList } from '../match/MapChipList';
 import { MapDemoDownloads } from '../match/MapDemoDownloads';
 import { FadeInImage } from '../common/FadeInImage';
 import { api } from '../../utils/api';
+import { downloadMatchReport } from '../../utils/matchReport';
 import ConfirmDialog from './ConfirmDialog';
 import { isShuffleMatch, isVetoDisabledForMatch } from '../../utils/matchFlags';
 import { normalizeConfigPlayers } from '../../utils/playerUtils';
@@ -1079,6 +1081,21 @@ const InnerMatchDetailsModal: React.FC<Required<MatchDetailsModalProps>> = ({
                           mapResults={match.mapResults}
                           matchSlug={match.slug}
                         />
+                      </Box>
+                    )}
+                    {match.status === 'completed' && (
+                      <Box mt={2}>
+                        <Button
+                          size="small"
+                          startIcon={<DownloadIcon fontSize="small" />}
+                          onClick={() =>
+                            void downloadMatchReport(match.slug).catch((err: Error) =>
+                              setError(err.message || 'Failed to download match report')
+                            )
+                          }
+                        >
+                          Download Stats JSON
+                        </Button>
                       </Box>
                     )}
                   </Box>

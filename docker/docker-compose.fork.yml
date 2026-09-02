@@ -1,0 +1,48 @@
+# Runs this fork's build alongside the already-running original stack,
+# sharing the same Postgres database/network (external, not managed here)
+# so it sees the same servers/tournaments. Exposed on a separate host port
+# so it doesn't collide with the original container.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.fork.yml up -d --build
+#
+# Default port: 3070 (override with HOST_PORT)
+
+services:
+  matchzy-tournament-fork:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: djhebei-matchzy-auto-tournament:local
+    container_name: djhebei-matchzy-tournament-api
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - '${HOST_PORT:-3070}:3069'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=postgres
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-matchzy_tournament}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      # Override so Steam's OpenID returnURL/realm (and OAuth redirects) point
+      # back at this fork's own port instead of the original's 3069 (copied
+      # verbatim from the original .env, which is otherwise correct here).
+      - FRONTEND_BASE_URL=${FORK_FRONTEND_BASE_URL:-http://192.168.0.16:3070}
+      - BACKEND_BASE_URL=${FORK_FRONTEND_BASE_URL:-http://192.168.0.16:3070}
+    volumes:
+      - ./data-fork:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3069/health']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - matchzy-network
+
+networks:
+  matchzy-network:
+    external: true
+    name: docker_matchzy-network

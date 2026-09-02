@@ -39,6 +39,9 @@ import MapIcon from '@mui/icons-material/Map';
 import DescriptionIcon from '@mui/icons-material/Description';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
+import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import { usePageHeader } from '../../contexts/PageHeaderContext';
 import { useSnackbar } from '../../contexts/SnackbarContext';
 import { api } from '../../utils/api';
@@ -172,6 +175,9 @@ export default function Layout() {
       '/templates': { title: t('layout.pageTitle.templates'), icon: DescriptionIcon },
       '/elo-templates': { title: t('layout.pageTitle.eloTemplates'), icon: TrendingUpIcon },
       '/admin': { title: t('layout.pageTitle.adminTools'), icon: CampaignIcon },
+      '/console': { title: t('layout.pageTitle.console'), icon: TerminalIcon },
+      '/manual-match': { title: t('layout.pageTitle.manualMatch'), icon: PlaylistAddCheckIcon },
+      '/results': { title: t('layout.pageTitle.results'), icon: ScoreboardIcon },
       '/settings': { title: t('layout.pageTitle.settings'), icon: SettingsIcon },
       '/dev': {
         title: t('layout.pageTitle.devTools'),
@@ -188,6 +194,8 @@ export default function Layout() {
     { label: t('nav.tournament'), path: '/tournament', icon: EmojiEventsIcon },
     { label: t('nav.bracket'), path: '/bracket', icon: AccountTreeIcon },
     { label: t('nav.matches'), path: '/matches', icon: SportsEsportsIcon },
+    { label: t('nav.manualMatch', 'Manual Match'), path: '/manual-match', icon: PlaylistAddCheckIcon },
+    { label: t('nav.results', 'Results'), path: '/results', icon: ScoreboardIcon },
   ];
 
   const resourcesNavItems = [
@@ -205,6 +213,7 @@ export default function Layout() {
 
   const systemNavItems = [
     { label: t('nav.adminTools'), path: '/admin', icon: CampaignIcon },
+    { label: t('nav.console', 'Live Console'), path: '/console', icon: TerminalIcon },
     ...(isDevelopment ? [{ label: t('nav.devTools'), path: '/dev', icon: BuildIcon }] : []),
   ];
 

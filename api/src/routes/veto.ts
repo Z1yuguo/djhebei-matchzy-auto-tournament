@@ -3,6 +3,7 @@ import { db } from '../config/database';
 import { log } from '../utils/logger';
 import { emitVetoUpdate } from '../services/socketService';
 import { matchAllocationService } from '../services/matchAllocationService';
+import { loadMatchOnServer } from '../services/matchLoadingService';
 import type { DbMatchRow, DbTournamentRow } from '../types/database.types';
 import type { TournamentResponse } from '../types/tournament.types';
 import { generateMatchConfig } from '../services/matchConfigBuilder';
@@ -732,6 +733,24 @@ router.post('/:matchSlug/action', async (req: Request, res: Response) => {
 
         setImmediate(async () => {
           try {
+            // A manual match may already have a server pinned by the admin
+            // (Manual Match UI's server picker) at creation time, before veto
+            // even started. allocateSingleMatch refuses matches that already
+            // have a server_id (it's built for the auto-allocate path), so
+            // load directly onto the pinned server instead in that case.
+            if (match.round === 0 && match.server_id) {
+              console.log(`[VETO] Loading pinned server ${match.server_id} for ${matchSlug}...`);
+              const loadResult = await loadMatchOnServer(matchSlug, match.server_id, { baseUrl });
+              if (loadResult.success) {
+                log.success(`[VETO] Match ${matchSlug} loaded on pinned server ${match.server_id} after veto`);
+              } else {
+                log.warn(
+                  `[VETO] Failed to load match ${matchSlug} on pinned server ${match.server_id} after veto: ${loadResult.error}`
+                );
+              }
+              return;
+            }
+
             console.log(`[VETO] Calling allocateSingleMatch for ${matchSlug}...`);
             const result = await matchAllocationService.allocateSingleMatch(matchSlug, baseUrl);
 

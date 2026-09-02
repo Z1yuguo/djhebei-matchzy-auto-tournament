@@ -13,6 +13,9 @@ import Tournament from './pages/Tournament';
 import Bracket from './pages/Bracket';
 import Matches from './pages/Matches';
 import AdminTools from './pages/AdminTools';
+import Console from './pages/Console';
+import ManualMatch from './pages/ManualMatch';
+import Results from './pages/Results';
 import Settings from './pages/Settings';
 import Development from './pages/Development';
 import { useIsDevelopment } from './hooks/useIsDevelopment';
@@ -197,6 +200,9 @@ function AppRoutes() {
         <Route path="bracket" element={<Bracket />} />
         <Route path="matches" element={<Matches />} />
         <Route path="admin" element={<AdminTools />} />
+        <Route path="console" element={<Console />} />
+        <Route path="manual-match" element={<ManualMatch />} />
+        <Route path="results" element={<Results />} />
         <Route path="settings" element={<Settings />} />
         <Route path="maps" element={<Maps />} />
         <Route path="templates" element={<Templates />} />

@@ -18,10 +18,12 @@ import {
   RadioGroup,
   Radio,
   FormLabel,
+  Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { api } from '../../utils/api';
 import { useSnackbar } from '../../contexts/SnackbarContext';
 import type { Server as ApiServer } from '../../types/api.types';
@@ -61,6 +63,7 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
   const [checking, setChecking] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [detectingIp, setDetectingIp] = useState(false);
 
   // SSH console (optional) - lets admins attach to the server's cs2-<N> tmux
   // console session (via cs2-server-manager) from the browser.
@@ -301,6 +304,31 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
     }
   };
 
+  const handleDetectIp = async () => {
+    setDetectingIp(true);
+    try {
+      const result = await api.get<{ success: boolean; requestHost: string | null }>(
+        '/api/system/network-info'
+      );
+      if (result.requestHost) {
+        setHost(result.requestHost);
+        if (error) setError('');
+        showSuccess(
+          t('serverModal.success.ipDetected', 'Detected current address: {{host}}', {
+            host: result.requestHost,
+          })
+        );
+      } else {
+        showError(t('serverModal.errors.ipDetectFailed', 'Could not detect the current address.'));
+      }
+    } catch (err) {
+      const error = err as Error;
+      showError(error.message || t('serverModal.errors.ipDetectFailed', 'Could not detect the current address.'));
+    } finally {
+      setDetectingIp(false);
+    }
+  };
+
   const handleDeleteClick = () => {
     setConfirmDeleteOpen(true);
   };
@@ -394,6 +422,34 @@ export default function ServerModal({ open, server, servers, onClose, onSave }: 
               fullWidth
               slotProps={{
                 htmlInput: { 'data-testid': 'server-host-input' },
+              }}
+              helperText={t(
+                'serverModal.hostHelper',
+                'On an unstable network (e.g. DHCP), use "Detect current IP" to fill in the address this browser is using right now.'
+              )}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip
+                      title={t(
+                        'serverModal.detectIpTooltip',
+                        "Fill in the address this browser is currently using to reach this panel - useful when the server's IP changes (e.g. DHCP)."
+                      )}
+                    >
+                      <span>
+                        <IconButton
+                          aria-label="detect current IP"
+                          onClick={handleDetectIp}
+                          edge="end"
+                          disabled={detectingIp}
+                          data-testid="server-detect-ip-button"
+                        >
+                          {detectingIp ? <CircularProgress size={18} /> : <MyLocationIcon fontSize="small" />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
               }}
             />
 

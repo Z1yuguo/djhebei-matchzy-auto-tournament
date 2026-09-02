@@ -6,6 +6,7 @@ import { emitMatchUpdate } from './socketService';
 import { matchzyConfigService } from './matchzyConfigService';
 import { matchAllocationService } from './matchAllocationService';
 import { serverAllocationTracker } from './serverAllocationTracker';
+import { playerService } from './playerService';
 import type { DbTournamentRow } from '../types/database.types';
 
 class MatchService {
@@ -19,16 +20,58 @@ class MatchService {
       throw new Error(`Match with slug '${input.slug}' already exists`);
     }
 
-    // Manual matches no longer support explicit server selection – the backend
-    // is responsible for auto‑allocating an appropriate server. We intentionally
-    // ignore any serverId passed in the payload to avoid double‑booking or
-    // pinning matches to a single server.
+    // Manual matches are auto-allocated a server by default. An admin may
+    // instead pin a specific server via input.serverId (e.g. the Manual
+    // Match UI's server picker); we validate it is actually free before
+    // honoring it, to avoid double-booking.
+    let pinnedServerId: string | null = null;
+    if (input.serverId) {
+      const server = await db.getOneAsync<{ id: string; enabled: number }>(
+        'servers',
+        'id = ?',
+        [input.serverId]
+      );
+      if (!server) {
+        throw new Error(`Server '${input.serverId}' not found`);
+      }
+      if (!server.enabled) {
+        throw new Error(`Server '${input.serverId}' is disabled`);
+      }
+      const busy = await db.queryOneAsync<{ count: number }>(
+        `SELECT COUNT(*) as count FROM matches
+          WHERE server_id = ? AND status IN ('pending', 'ready', 'loaded', 'live')`,
+        [input.serverId]
+      );
+      if ((busy?.count ?? 0) > 0) {
+        throw new Error(`Server '${input.serverId}' is currently busy with another match`);
+      }
+      pinnedServerId = input.serverId;
+    }
 
     // Normalize config and apply global simulation + round-limit settings so
     // manual matches behave like tournament-generated matches.
     const config: MatchConfig = {
       ...input.config,
     };
+
+    // Ensure every roster player has a `players` row (steamId -> name/ELO
+    // defaults), mirroring how team creation auto-registers players. Manual
+    // matches can reference SteamIDs that were never added to a team, and
+    // player_match_stats has a FK on players(id), so without this, stats
+    // would silently fail to persist for anyone not already known.
+    const rosterEntries: Array<[string, string]> = [
+      ...Object.entries(config.team1?.players || {}),
+      ...Object.entries(config.team2?.players || {}),
+    ];
+    for (const [steamId, name] of rosterEntries) {
+      try {
+        await playerService.getOrCreatePlayer(steamId, name);
+      } catch (err) {
+        log.warn(`Failed to auto-register roster player ${steamId} for match ${input.slug}`, {
+          error: err,
+        });
+      }
+    }
 
     try {
       // Apply global simulation mode (development only, mirrors matchConfigBuilder behavior)
@@ -89,8 +132,11 @@ class MatchService {
       if (!hasMatchzyEnhancedCvars) {
         const matchzyEnhancedCvars = matchzyConfigService.getDefaultMatchzyEnhancedCvars();
         config.cvars = {
-          ...(config.cvars || {}),
           ...matchzyEnhancedCvars,
+          // Explicit values from the submitted config (e.g. the Manual Match
+          // UI's demo-recording toggle) must win over the default profile -
+          // otherwise a caller can never actually override a single default.
+          ...(config.cvars || {}),
         };
         log.debug('Applied default MatchZy Enhanced cvars to manual match', {
           matchSlug: input.slug,
@@ -140,9 +186,10 @@ class MatchService {
       tournament_id: null,
       round: 0, // 0 = manual / non-bracket match
       match_number: 0,
-      // Always start manual matches without a server; the allocator will attach
-      // a concrete server_id once it has picked a free server.
-      server_id: null,
+      // Either the admin's pinned choice (validated above) or null, in which
+      // case the allocator attaches a concrete server_id once it picks a free
+      // server (see routes/matches.ts POST / handler).
+      server_id: pinnedServerId,
       team1_id: team1Id,
       team2_id: team2Id,
       config: JSON.stringify(config),
@@ -154,6 +201,10 @@ class MatchService {
     const match = await db.getOneAsync<Match>('matches', 'slug = ?', [input.slug]);
     if (!match) {
       throw new Error('Failed to create match');
+    }
+
+    if (pinnedServerId) {
+      serverAllocationTracker.markAllocated(pinnedServerId, input.slug);
     }
 
     const response = this.toResponse(match, baseUrl);
