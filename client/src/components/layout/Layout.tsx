@@ -42,6 +42,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
+import MicIcon from '@mui/icons-material/Mic';
 import { usePageHeader } from '../../contexts/PageHeaderContext';
 import { useSnackbar } from '../../contexts/SnackbarContext';
 import { api } from '../../utils/api';
@@ -170,6 +171,7 @@ export default function Layout() {
       '/matches': { title: t('layout.pageTitle.matches'), icon: SportsEsportsIcon },
       '/teams': { title: t('layout.pageTitle.teams'), icon: GroupsIcon },
       '/players': { title: t('layout.pageTitle.players'), icon: PersonIcon },
+      '/cast': { title: t('layout.pageTitle.cast', 'Cast'), icon: MicIcon },
       '/servers': { title: t('layout.pageTitle.servers'), icon: StorageIcon },
       '/maps': { title: t('layout.pageTitle.maps'), icon: MapIcon },
       '/templates': { title: t('layout.pageTitle.templates'), icon: DescriptionIcon },
@@ -201,6 +203,7 @@ export default function Layout() {
   const resourcesNavItems = [
     { label: t('nav.teams'), path: '/teams', icon: GroupsIcon },
     { label: t('nav.players'), path: '/players', icon: PersonIcon },
+    { label: t('nav.cast', 'Cast'), path: '/cast', icon: MicIcon },
     { label: t('nav.servers'), path: '/servers', icon: StorageIcon },
     { label: t('nav.maps'), path: '/maps', icon: MapIcon },
   ];

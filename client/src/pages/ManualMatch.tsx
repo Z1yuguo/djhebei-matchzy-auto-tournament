@@ -60,11 +60,13 @@ function RosterEditor({
   players,
   allPlayers,
   onChange,
+  addExistingLabel,
 }: {
   label: string;
   players: RosterPlayer[];
-  allPlayers: PlayerDetail[];
+  allPlayers: { id: string; name: string }[];
   onChange: (players: RosterPlayer[]) => void;
+  addExistingLabel?: string;
 }) {
   const { t } = useTranslation();
   const [manualSteamId, setManualSteamId] = useState('');
@@ -109,7 +111,10 @@ function RosterEditor({
         onChange={(_e, value) => value && addPlayer(value.id, value.name)}
         value={null}
         renderInput={(params) => (
-          <TextField {...params} label={t('manualMatch.addExistingPlayer', 'Add existing player')} />
+          <TextField
+            {...params}
+            label={addExistingLabel || t('manualMatch.addExistingPlayer', 'Add existing player')}
+          />
         )}
         sx={{ mb: 1 }}
       />
@@ -168,6 +173,7 @@ export default function ManualMatch() {
 
   const [allPlayers, setAllPlayers] = useState<PlayerDetail[]>([]);
   const [allTeams, setAllTeams] = useState<{ id: string; name: string; players?: RosterPlayer[] }[]>([]);
+  const [allCasters, setAllCasters] = useState<{ id: string; name: string }[]>([]);
   const [allMaps, setAllMaps] = useState<{ id: string; displayName: string }[]>([]);
   const [allMapPools, setAllMapPools] = useState<{ id: number; name: string; mapIds: string[] }[]>([]);
   const [availableServers, setAvailableServers] = useState<
@@ -186,23 +192,26 @@ export default function ManualMatch() {
 
   const loadData = useCallback(async () => {
     try {
-      const [playersRes, teamsRes, mapsRes, mapPoolsRes, matchesRes, availabilityRes] = await Promise.all([
-        api.get<PlayersResponse>('/api/players/selection'),
-        api.get<{ success: boolean; teams?: { id: string; name: string; players?: RosterPlayer[] }[] }>(
-          '/api/teams'
-        ),
-        api.get<MapsResponse>('/api/maps'),
-        api.get<{ success: boolean; mapPools?: { id: number; name: string; mapIds: string[] }[] }>(
-          '/api/map-pools?enabled=true'
-        ),
-        api.get<MatchesResponse>('/api/matches'),
-        api.get<{
-          success: boolean;
-          servers?: { id: string; name: string; online: boolean; allocatable: boolean }[];
-        }>('/api/tournament/server-availability'),
-      ]);
+      const [playersRes, teamsRes, castersRes, mapsRes, mapPoolsRes, matchesRes, availabilityRes] =
+        await Promise.all([
+          api.get<PlayersResponse>('/api/players/selection'),
+          api.get<{ success: boolean; teams?: { id: string; name: string; players?: RosterPlayer[] }[] }>(
+            '/api/teams'
+          ),
+          api.get<{ success: boolean; casters?: { id: string; name: string }[] }>('/api/casters'),
+          api.get<MapsResponse>('/api/maps'),
+          api.get<{ success: boolean; mapPools?: { id: number; name: string; mapIds: string[] }[] }>(
+            '/api/map-pools?enabled=true'
+          ),
+          api.get<MatchesResponse>('/api/matches'),
+          api.get<{
+            success: boolean;
+            servers?: { id: string; name: string; online: boolean; allocatable: boolean }[];
+          }>('/api/tournament/server-availability'),
+        ]);
       setAllPlayers(playersRes.players || []);
       setAllTeams(teamsRes.teams || []);
+      setAllCasters(castersRes.casters || []);
       setAllMaps(mapsRes.maps || []);
       setAllMapPools(mapPoolsRes.mapPools || []);
       setManualMatches((matchesRes.matches || []).filter((m) => m.round === 0));
@@ -445,13 +454,14 @@ export default function ManualMatch() {
             <RosterEditor
               label={t('manualMatch.cast', 'Cast / Broadcasters (optional)')}
               players={castMembers}
-              allPlayers={allPlayers}
+              allPlayers={allCasters}
               onChange={setCastMembers}
+              addExistingLabel={t('manualMatch.addExistingCaster', 'Add registered cast member')}
             />
             <Typography variant="caption" color="text.secondary">
               {t(
                 'manualMatch.castHelper',
-                'Added as spectators in the MatchZy config - joins as an observer automatically when connecting.'
+                'Added as spectators in the MatchZy config - joins as an observer automatically when connecting. Manage the registered list under Cast in the sidebar.'
               )}
             </Typography>
           </Box>

@@ -47,6 +47,7 @@ import authRoutes from './routes/auth';
 import matchzyRoutes from './routes/matchzy';
 import systemRoutes from './routes/system';
 import backupRoutes from './routes/backup';
+import casterRoutes from './routes/casters';
 import { initMatchZyVersionService } from './services/matchzyVersionService';
 import { recoverActiveMatches } from './services/matchRecoveryService';
 import { matchAllocationService } from './services/matchAllocationService';
@@ -388,6 +389,7 @@ app.use('/api/auth', authRoutes); // Authentication (Steam, Keycloak, Discord)
 app.use('/api/matchzy', matchzyRoutes); // MatchZy Enhanced version info
 app.use('/api/system', systemRoutes); // Small admin UI helpers (e.g. detect current LAN IP)
 app.use('/api/backup', backupRoutes); // GitHub backup sync (teams/players/tournament/results)
+app.use('/api/casters', casterRoutes); // Cast/broadcaster SteamID registry
 
 // Serve frontend at /app (built client lives under api/public)
 const publicPath = path.join(__dirname, '..', 'public');

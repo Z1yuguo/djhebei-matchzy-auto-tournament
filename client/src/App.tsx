@@ -16,6 +16,7 @@ import AdminTools from './pages/AdminTools';
 import Console from './pages/Console';
 import ManualMatch from './pages/ManualMatch';
 import Results from './pages/Results';
+import Cast from './pages/Cast';
 import Settings from './pages/Settings';
 import Development from './pages/Development';
 import { useIsDevelopment } from './hooks/useIsDevelopment';
@@ -195,6 +196,7 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="teams" element={<Teams />} />
         <Route path="players" element={<Players />} />
+        <Route path="cast" element={<Cast />} />
         <Route path="servers" element={<Servers />} />
         <Route path="tournament" element={<Tournament />} />
         <Route path="bracket" element={<Bracket />} />

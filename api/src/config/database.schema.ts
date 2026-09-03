@@ -364,6 +364,16 @@ export function getSchemaSQL(): string {
     CREATE INDEX IF NOT EXISTS idx_shuffle_tournament_players_tournament ON shuffle_tournament_players(tournament_id);
     CREATE INDEX IF NOT EXISTS idx_shuffle_tournament_players_player ON shuffle_tournament_players(player_id);
 
+    -- Cast / broadcaster registry - a small, separate pool of known SteamIDs
+    -- (not full competitive players) that can be quickly attached to any
+    -- match as spectators.players in the MatchZy config.
+    CREATE TABLE IF NOT EXISTS casters (
+      id TEXT PRIMARY KEY, -- Steam ID
+      name TEXT NOT NULL,
+      avatar_url TEXT,
+      created_at INTEGER NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::INTEGER
+    );
+
     -- Session table for connect-pg-simple (express-session PostgreSQL store)
     -- This table is required for session persistence across API restarts
     CREATE TABLE IF NOT EXISTS session (
