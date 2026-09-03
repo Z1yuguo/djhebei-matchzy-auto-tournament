@@ -154,6 +154,7 @@ export default function ManualMatch() {
   const [bestOf, setBestOf] = useState<1 | 3 | 5>(1);
   const [vetoEnabled, setVetoEnabled] = useState(true);
   const [selectedMaps, setSelectedMaps] = useState<string[]>([]);
+  const [mapSides, setMapSides] = useState<Record<string, 'team1_ct' | 'team2_ct' | 'knife'>>({});
   const [serverId, setServerId] = useState<string>('');
   const [recordDemo, setRecordDemo] = useState(true);
 
@@ -234,6 +235,9 @@ export default function ManualMatch() {
           num_maps: bestOf,
           maplist: selectedMaps,
           vetoDisabled: !vetoEnabled,
+          ...(vetoEnabled
+            ? {}
+            : { map_sides: selectedMaps.map((mapId) => mapSides[mapId] || 'knife') }),
           cvars: { matchzy_demo_recording_enabled: recordDemo ? 1 : 0 },
         },
       });
@@ -244,6 +248,7 @@ export default function ManualMatch() {
       setTeam1Players([]);
       setTeam2Players([]);
       setSelectedMaps([]);
+                    setMapSides({});
       setServerId('');
       void loadData();
     } catch (err) {
@@ -339,6 +344,7 @@ export default function ManualMatch() {
                   if (v !== null) {
                     setBestOf(v);
                     setSelectedMaps([]);
+                    setMapSides({});
                   }
                 }}
               >
@@ -356,6 +362,7 @@ export default function ManualMatch() {
                     onChange={(e) => {
                       setVetoEnabled(e.target.checked);
                       setSelectedMaps([]);
+                    setMapSides({});
                     }}
                   />
                 }
@@ -423,7 +430,12 @@ export default function ManualMatch() {
               options={allMaps.map((m) => m.id)}
               getOptionLabel={(id) => allMaps.find((m) => m.id === id)?.displayName || id}
               value={selectedMaps}
-              onChange={(_e, value) => setSelectedMaps(value)}
+              onChange={(_e, value) => {
+                setSelectedMaps(value);
+                setMapSides((prev) =>
+                  Object.fromEntries(Object.entries(prev).filter(([mapId]) => value.includes(mapId)))
+                );
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -436,6 +448,43 @@ export default function ManualMatch() {
               )}
             />
           </Box>
+
+          {!vetoEnabled && selectedMaps.length > 0 && (
+            <Box mt={2} display="flex" flexDirection="column" gap={1}>
+              <Typography variant="subtitle2">
+                {t('manualMatch.startingSides', 'Starting sides (optional — defaults to a knife round)')}
+              </Typography>
+              {selectedMaps.map((mapId) => (
+                <Box key={mapId} display="flex" alignItems="center" gap={2}>
+                  <Typography variant="body2" sx={{ minWidth: 140 }}>
+                    {allMaps.find((m) => m.id === mapId)?.displayName || mapId}
+                  </Typography>
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={mapSides[mapId] || 'knife'}
+                    onChange={(_e, v) => {
+                      if (v !== null) {
+                        setMapSides((prev) => ({ ...prev, [mapId]: v }));
+                      }
+                    }}
+                  >
+                    <ToggleButton value="team1_ct">
+                      {t('manualMatch.side.team1Ct', '{{team}} starts CT', {
+                        team: team1Name.trim() || t('manualMatch.team1Name', 'Team 1'),
+                      })}
+                    </ToggleButton>
+                    <ToggleButton value="team2_ct">
+                      {t('manualMatch.side.team2Ct', '{{team}} starts CT', {
+                        team: team2Name.trim() || t('manualMatch.team2Name', 'Team 2'),
+                      })}
+                    </ToggleButton>
+                    <ToggleButton value="knife">{t('manualMatch.side.knife', 'Knife round')}</ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+              ))}
+            </Box>
+          )}
 
           <Box mt={3} display="flex" gap={1} alignItems="center">
             <Button
