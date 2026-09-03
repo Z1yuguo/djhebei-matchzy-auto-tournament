@@ -1,132 +1,94 @@
 <div align="center">
-  <img src="client/public/icon.svg" alt="MatchZy Auto Tournament" width="140" height="140">
-  
-  # MatchZy Auto Tournament
-  
+  <img src="client/public/icon.svg" alt="DJHebei's MatchZy" width="140" height="140">
+
+  # DJHebei's MatchZy
+
   ⚡ **Automated CS2 tournament management — one click from bracket creation to final scores**
-  
-  <p>Complete tournament automation for Counter-Strike 2 using the enhanced MatchZy plugin. Zero manual server configuration.</p>
+
+  <p>A fork of <a href="https://github.com/sivert-io/matchzy-auto-tournament">MatchZy Auto Tournament</a> with extra admin tooling: a live SSH server console, a manual-match builder, cast/broadcaster management, HLTV-style ratings, and GitHub-backed data backups.</p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker/docker-compose.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-
-**📚 <a href="https://docs.sivert.io/docs/mat" target="_blank">Documentation</a>** • <a href="https://discord.gg/n7gHYau7aW" target="_blank">💬 Discord</a>
 
 </div>
 
 ---
 
-## 🎯 Who is this for?
+## 🚀 New here? Start with the setup guide
 
-- **Tournament Organizers** — Run professional CS2 tournaments with automated brackets, veto, ratings, and live stats
-- **Casual Players** — Quick setup to play competitive matches with friends (5v5, 2v2, or custom)
-- **Developers** — Open source platform for building CS2 tournament features
+**👉 [SETUP_GUIDE.md](SETUP_GUIDE.md)** — a complete, step-by-step walkthrough written for someone who has never touched code before. It covers, in order:
 
----
+1. Installing CS2 Server Manager (CSM) and starting your game servers
+2. Installing this panel via Docker
+3. Adding your servers to the panel (RCON + live SSH console)
+4. Setting up automated GitHub backups
+5. Everyday tasks (creating matches, checking results) and troubleshooting
 
-## ⚡ Quick Start (5 minutes)
-
-### 1. Install Platform
+If you just want the panel up and running as fast as possible:
 
 ```bash
-# Clone and start
-git clone https://github.com/sivert-io/matchzy-auto-tournament.git
-cd matchzy-auto-tournament
+git clone https://github.com/Z1yuguo/djhebei-matchzy-auto-tournament.git
+cd djhebei-matchzy-auto-tournament
 cp example.env .env
-docker compose up -d
+# edit .env - see SETUP_GUIDE.md section 2.3 for what to fill in
+docker compose -f docker/docker-compose.yml up -d --build
 
-# Open http://localhost:3069
+# Open http://<this-machine's-ip>:3069
 ```
 
-### 2. Add CS2 Servers
+---
 
-**Option A: Automated (Recommended)**
-- Use [CS2 Server Manager (CSM)](https://docs.sivert.io/docs/csm) to spin up servers with one command
+## ✨ What's in this fork (beyond upstream)
 
-**Option B: Manual**
-- Install [CounterStrikeSharp](https://docs.cssharp.dev/) on your CS2 server
-- Install [MatchZy Enhanced v1.3.0+](https://github.com/sivert-io/matchzy-Enhanced/releases)
-- Add server in the platform: Settings → Servers
+- 🖥️ **Live Console** — SSH into any server's tmux session and watch/interact with the real game console from the browser
+- 🎮 **Manual Match builder** — standalone matches outside the tournament bracket: pick rosters (existing players, whole teams, or raw SteamID), BO1/BO3/BO5, veto on/off with per-map side selection, pin a specific server, toggle demo recording, and preview the exact MatchZy config before committing
+- 🎙️ **Cast/Broadcaster registry** — register caster SteamIDs once, attach them to any match as MatchZy spectators
+- 📊 **Results page** — browse completed games, download a normalized stats JSON per match
+- ⭐ **HLTV Rating** — a per-match performance score (independent of win/loss), alongside the existing win/loss-driven ELO/Skill Rating system, with a fully custom weight editor
+- ☁️ **GitHub Backup sync** — push teams/players/tournament/results JSON to a separate private repo on demand
+- 🌐 **Detect current IP** button on server config — handy on unstable/DHCP networks where the host's address changes
 
-### 3. Create Tournament
-
-Dashboard → New Tournament → Select format → Add teams → Start!
-
-**That's it!** Matches auto-load on servers, veto happens in the browser, and brackets update live.
+See [Releases](https://github.com/Z1yuguo/djhebei-matchzy-auto-tournament/releases) for version history.
 
 ---
 
-## ✨ What You Get
+## ✨ What you get from upstream
 
-🏆 **Tournament Formats** — Single/Double Elimination, Swiss, Round Robin, Shuffle  
-🗺️ **Map Veto** — FaceIT-style ban/pick for BO1/BO3/BO5  
-📈 **Player Ratings** — OpenSkill-backed ELO system with leaderboards  
-⚡ **Real-Time** — WebSocket updates for scores, connections, status  
-🎮 **Auto-Everything** — Server allocation, match loading, bracket progression  
-🎬 **Demo Recording** — Automatic upload and download  
+🏆 **Tournament Formats** — Single/Double Elimination, Swiss, Round Robin, Shuffle
+🗺️ **Map Veto** — FaceIT-style ban/pick for BO1/BO3/BO5
+📈 **Player Ratings** — OpenSkill-backed ELO system with leaderboards
+⚡ **Real-Time** — WebSocket updates for scores, connections, status
+🎮 **Auto-Everything** — Server allocation, match loading, bracket progression
+🎬 **Demo Recording** — Automatic upload and download
 👥 **Public Pages** — No-login team pages with server connect info
 
-See screenshots in the docs: https://docs.sivert.io/docs/mat/user/screenshots
-
 ---
 
-## 📖 Documentation (docs.sivert.io)
+## 📖 Documentation
 
-**For Tournament Admins (Operators):**
-- [Admin Dashboard](https://docs.sivert.io/docs/mat/user/admin-dashboard)
-- [Server Setup](https://docs.sivert.io/docs/mat/user/server-setup)
-- [Creating Tournaments](https://docs.sivert.io/docs/mat/user/tournaments)
-
-**For Developers:**
-- [Contributing Guide](.github/CONTRIBUTING.md)
-- [Architecture](https://docs.sivert.io/docs/mat/developer/architecture)
-- [Testing](https://docs.sivert.io/docs/mat/developer/testing)
+- **This fork's setup guide (start here):** [SETUP_GUIDE.md](SETUP_GUIDE.md)
+- **Upstream platform docs** (architecture, admin dashboard, tournaments — mostly still accurate for the shared core): https://docs.sivert.io/docs/mat
+- **CS2 Server Manager (CSM) docs:** https://docs.sivert.io/docs/csm
 
 ---
 
 ## 🔧 Requirements
 
-- Docker & Docker Compose
+- A Linux machine with Docker & Docker Compose
 - CS2 servers with [MatchZy Enhanced v1.3.0+](https://github.com/sivert-io/matchzy-Enhanced/releases)
 - RCON access to servers
 
 ---
 
-## 🔄 Updating (Docker)
-
-If you run MAT via Docker Compose, the basic update flow is:
+## 🔄 Updating
 
 ```bash
-# (recommended) backup your database first
-mkdir -p backups
-docker compose exec -T postgres pg_dump -U "${DB_USER:-postgres}" "${DB_NAME:-matchzy_tournament}" > "backups/mat-$(date +%F-%H%M%S).sql"
-
-# pull latest image + recreate containers
-docker compose pull
-docker compose up -d
-
-# watch logs for startup/migrations
-docker compose logs -f matchzy-tournament
+git pull
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-More details: https://docs.sivert.io/docs/mat/user/updating
-
-For local dev builds (build from source): `yarn docker:local:restart`.
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! Bug fixes, features, docs improvements, translations, or ideas.
-
-**Ways to contribute:**
-- 🐛 [Report bugs or request features](.github/ISSUE_TEMPLATE/)
-- 💻 [Submit code improvements](.github/CONTRIBUTING.md)
-- 🌍 [Translate to your language](TRANSLATING.md)
-- 📚 [Improve documentation](https://docs.sivert.io/docs/mat)
-
-**[Read Full Contributing Guide](.github/CONTRIBUTING.md)**
+Your data lives in Docker's Postgres volume and survives this. See [SETUP_GUIDE.md](SETUP_GUIDE.md) for backing up `.env` and your data before major updates.
 
 ---
 
@@ -134,7 +96,7 @@ Contributions welcome! Bug fixes, features, docs improvements, translations, or 
 
 MIT License - see [LICENSE](LICENSE)
 
-**Credits:** [cs2-server-manager](https://github.com/sivert-io/cs2-server-manager) • [brackets-manager.js](https://github.com/Drarig29/brackets-manager.js) • [brackets-viewer.js](https://github.com/Drarig29/brackets-viewer.js)
+**Credits:** Forked from [sivert-io/matchzy-auto-tournament](https://github.com/sivert-io/matchzy-auto-tournament) • [cs2-server-manager](https://github.com/sivert-io/cs2-server-manager) • [brackets-manager.js](https://github.com/Drarig29/brackets-manager.js) • [brackets-viewer.js](https://github.com/Drarig29/brackets-viewer.js)
 
 ---
 
