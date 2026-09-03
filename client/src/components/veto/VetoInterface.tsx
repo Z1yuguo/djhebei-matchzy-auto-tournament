@@ -59,6 +59,11 @@ export const VetoInterface: React.FC<VetoInterfaceProps> = ({
   const [vetoState, setVetoState] = useState<VetoState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Separate from `error`: a failed ban/pick/side-pick attempt (e.g. "not your
+  // turn" because the board hadn't caught up to the other team's last move
+  // yet) shouldn't tear down the whole veto board - just show it as a
+  // dismissible banner and let the player retry against the current state.
+  const [actionError, setActionError] = useState('');
   const [allMaps, setAllMaps] = useState<
     Map<string, { id: string; displayName: string; imageUrl: string | null }>
   >(new Map());
@@ -217,13 +222,17 @@ export const VetoInterface: React.FC<VetoInterfaceProps> = ({
       const data = await response.json();
 
       if (!data.success) {
-          setError(translateVetoError(data.error) || t('vetoInterface.errors.failedToProcessVetoAction'));
+          setActionError(translateVetoError(data.error) || t('vetoInterface.errors.failedToProcessVetoAction'));
+          // The board may be stale (e.g. the other team just acted and this
+          // client hasn't caught up yet) - refresh it so the player sees the
+          // real current turn instead of being stuck looking at old state.
+          void loadVetoState();
       } else {
-        setError(''); // Clear any previous errors
+        setActionError(''); // Clear any previous errors
       }
     } catch (err) {
       console.error('Error submitting veto action:', err);
-      setError(t('vetoInterface.errors.failedToSubmitVetoAction'));
+      setActionError(t('vetoInterface.errors.failedToSubmitVetoAction'));
     }
   };
 
@@ -246,14 +255,15 @@ export const VetoInterface: React.FC<VetoInterfaceProps> = ({
       const data = await response.json();
 
       if (data.success) {
-        setError('');
+        setActionError('');
       } else {
         console.error('Side pick failed:', data.error);
-        setError(translateVetoError(data.error) || t('vetoInterface.errors.failedToPickSide'));
+        setActionError(translateVetoError(data.error) || t('vetoInterface.errors.failedToPickSide'));
+        void loadVetoState();
       }
     } catch (err) {
       console.error('Error picking side:', err);
-      setError(t('vetoInterface.errors.failedToPickSide'));
+      setActionError(t('vetoInterface.errors.failedToPickSide'));
     }
   };
 
@@ -362,6 +372,12 @@ export const VetoInterface: React.FC<VetoInterfaceProps> = ({
 
   return (
     <Box data-testid="veto-interface">
+      {actionError && (
+        <Alert severity="error" onClose={() => setActionError('')} sx={{ mb: 2 }}>
+          {actionError}
+        </Alert>
+      )}
+
       {/* Match Header */}
       <Paper elevation={2} sx={{ mb: 3, p: 3, bgcolor: 'background.paper' }}>
         <Box display="flex" alignItems="center" justifyContent="center" gap={3}>
