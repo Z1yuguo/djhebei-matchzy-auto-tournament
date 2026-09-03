@@ -158,6 +158,7 @@ export default function ManualMatch() {
   const [team2Players, setTeam2Players] = useState<RosterPlayer[]>([]);
   const [team1SourceTeamId, setTeam1SourceTeamId] = useState<string | null>(null);
   const [team2SourceTeamId, setTeam2SourceTeamId] = useState<string | null>(null);
+  const [castMembers, setCastMembers] = useState<RosterPlayer[]>([]);
   const [bestOf, setBestOf] = useState<1 | 3 | 5>(1);
   const [vetoEnabled, setVetoEnabled] = useState(true);
   const [selectedMaps, setSelectedMaps] = useState<string[]>([]);
@@ -294,6 +295,7 @@ export default function ManualMatch() {
             ...(vetoEnabled
               ? {}
               : { map_sides: selectedMaps.map((mapId) => mapSides[mapId] || 'knife') }),
+            ...(castMembers.length > 0 ? { spectators: { players: toPlayerMap(castMembers) } } : {}),
             cvars: { matchzy_demo_recording_enabled: recordDemo ? 1 : 0 },
           },
         }
@@ -312,6 +314,7 @@ export default function ManualMatch() {
       setTeam2Players([]);
       setTeam1SourceTeamId(null);
       setTeam2SourceTeamId(null);
+      setCastMembers([]);
       setSelectedMaps([]);
       setMapSides({});
       setServerId('');
@@ -436,6 +439,21 @@ export default function ManualMatch() {
                 }}
               />
             </Box>
+          </Box>
+
+          <Box mt={3}>
+            <RosterEditor
+              label={t('manualMatch.cast', 'Cast / Broadcasters (optional)')}
+              players={castMembers}
+              allPlayers={allPlayers}
+              onChange={setCastMembers}
+            />
+            <Typography variant="caption" color="text.secondary">
+              {t(
+                'manualMatch.castHelper',
+                'Added as spectators in the MatchZy config - joins as an observer automatically when connecting.'
+              )}
+            </Typography>
           </Box>
 
           <Divider sx={{ my: 3 }} />

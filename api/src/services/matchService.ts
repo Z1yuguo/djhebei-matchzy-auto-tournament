@@ -62,6 +62,7 @@ class MatchService {
     const rosterEntries: Array<[string, string]> = [
       ...Object.entries(config.team1?.players || {}),
       ...Object.entries(config.team2?.players || {}),
+      ...Object.entries(config.spectators?.players || {}),
     ];
     for (const [steamId, name] of rosterEntries) {
       try {
