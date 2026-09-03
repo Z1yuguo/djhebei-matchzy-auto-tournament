@@ -28,6 +28,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CodeIcon from '@mui/icons-material/Code';
 import DownloadIcon from '@mui/icons-material/Download';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   formatDate,
@@ -572,6 +573,46 @@ const InnerMatchDetailsModal: React.FC<Required<MatchDetailsModalProps>> = ({
                     tournamentStarted
                   )}
                 </Typography>
+              </Alert>
+            )}
+
+            {/* Veto Links - share these with each team so players can ban/pick maps */}
+            {!vetoDisabled && match.status === 'pending' && match.team1?.id && match.team2?.id && (
+              <Alert severity="info">
+                <Typography variant="body2" fontWeight={600} mb={1}>
+                  Veto not started - send each team their link
+                </Typography>
+                {[
+                  { label: match.team1?.name || 'Team 1', id: match.team1.id },
+                  { label: match.team2?.name || 'Team 2', id: match.team2.id },
+                ].map((team) => {
+                  const url = `${window.location.origin}/team/${team.id}`;
+                  return (
+                    <Box
+                      key={team.id}
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      sx={{ fontFamily: 'monospace', fontSize: '0.8rem', mb: 0.5 }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ fontFamily: 'inherit', fontSize: 'inherit', flex: 1, wordBreak: 'break-all' }}
+                      >
+                        {team.label}: {url}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(url);
+                          setSuccess('Link copied to clipboard');
+                        }}
+                      >
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  );
+                })}
               </Alert>
             )}
 
