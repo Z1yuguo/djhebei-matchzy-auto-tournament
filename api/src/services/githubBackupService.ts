@@ -114,11 +114,25 @@ export async function syncAllBackups(): Promise<BackupCategoryResult[]> {
     );
   }
 
-  const results = await Promise.all([
-    backupCategory('teams', 'teams.json', () => teamService.getAllTeams(), config),
-    backupCategory('players', 'players.json', () => playerService.getAllPlayers(), config),
-    backupCategory('tournament', 'tournament.json', () => tournamentService.getTournament(), config),
-    backupCategory(
+  // GitHub's Contents API can't safely handle concurrent commits to the same
+  // branch - each PUT reads the branch ref, then commits against it, so
+  // parallel writes race to update `main` and all but one lose with a 409
+  // (stale sha). Commit one file at a time instead.
+  const results: BackupCategoryResult[] = [];
+  results.push(await backupCategory('teams', 'teams.json', () => teamService.getAllTeams(), config));
+  results.push(
+    await backupCategory('players', 'players.json', () => playerService.getAllPlayers(), config)
+  );
+  results.push(
+    await backupCategory(
+      'tournament',
+      'tournament.json',
+      () => tournamentService.getTournament(),
+      config
+    )
+  );
+  results.push(
+    await backupCategory(
       'results',
       'results.json',
       async () => {
@@ -132,8 +146,8 @@ export async function syncAllBackups(): Promise<BackupCategoryResult[]> {
         return reports.filter(Boolean);
       },
       config
-    ),
-  ]);
+    )
+  );
 
   return results;
 }
