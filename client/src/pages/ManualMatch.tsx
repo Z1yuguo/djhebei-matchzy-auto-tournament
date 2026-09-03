@@ -156,6 +156,8 @@ export default function ManualMatch() {
   const [team2Name, setTeam2Name] = useState('');
   const [team1Players, setTeam1Players] = useState<RosterPlayer[]>([]);
   const [team2Players, setTeam2Players] = useState<RosterPlayer[]>([]);
+  const [team1SourceTeamId, setTeam1SourceTeamId] = useState<string | null>(null);
+  const [team2SourceTeamId, setTeam2SourceTeamId] = useState<string | null>(null);
   const [bestOf, setBestOf] = useState<1 | 3 | 5>(1);
   const [vetoEnabled, setVetoEnabled] = useState(true);
   const [selectedMaps, setSelectedMaps] = useState<string[]>([]);
@@ -164,6 +166,7 @@ export default function ManualMatch() {
   const [recordDemo, setRecordDemo] = useState(true);
 
   const [allPlayers, setAllPlayers] = useState<PlayerDetail[]>([]);
+  const [allTeams, setAllTeams] = useState<{ id: string; name: string; players?: RosterPlayer[] }[]>([]);
   const [allMaps, setAllMaps] = useState<{ id: string; displayName: string }[]>([]);
   const [availableServers, setAvailableServers] = useState<
     { id: string; name: string; online: boolean; allocatable: boolean }[]
@@ -181,8 +184,11 @@ export default function ManualMatch() {
 
   const loadData = useCallback(async () => {
     try {
-      const [playersRes, mapsRes, matchesRes, availabilityRes] = await Promise.all([
+      const [playersRes, teamsRes, mapsRes, matchesRes, availabilityRes] = await Promise.all([
         api.get<PlayersResponse>('/api/players/selection'),
+        api.get<{ success: boolean; teams?: { id: string; name: string; players?: RosterPlayer[] }[] }>(
+          '/api/teams'
+        ),
         api.get<MapsResponse>('/api/maps'),
         api.get<MatchesResponse>('/api/matches'),
         api.get<{
@@ -191,6 +197,7 @@ export default function ManualMatch() {
         }>('/api/tournament/server-availability'),
       ]);
       setAllPlayers(playersRes.players || []);
+      setAllTeams(teamsRes.teams || []);
       setAllMaps(mapsRes.maps || []);
       setManualMatches((matchesRes.matches || []).filter((m) => m.round === 0));
       setAvailableServers(availabilityRes.servers || []);
@@ -238,8 +245,10 @@ export default function ManualMatch() {
       // requires a real row in the teams table - an inline name/roster in
       // the match config alone isn't reachable there. Only create real teams
       // when veto is actually on; "veto off" doesn't need a routable page.
-      let team1Id: string | undefined;
-      let team2Id: string | undefined;
+      // If the roster was loaded from an existing team unmodified, reuse that
+      // team's real ID instead of creating a duplicate.
+      let team1Id: string | undefined = team1SourceTeamId || undefined;
+      let team2Id: string | undefined = team2SourceTeamId || undefined;
       if (vetoEnabled) {
         const suffix = Date.now().toString(36);
         const createTeam = async (name: string, players: RosterPlayer[], tag: string) => {
@@ -250,10 +259,17 @@ export default function ManualMatch() {
           );
           return res.team?.id || id;
         };
-        [team1Id, team2Id] = await Promise.all([
-          createTeam(team1Name, team1Players, 't1'),
-          createTeam(team2Name, team2Players, 't2'),
+        const [newTeam1Id, newTeam2Id] = await Promise.all([
+          team1Id ? Promise.resolve(team1Id) : createTeam(team1Name, team1Players, 't1'),
+          team2Id ? Promise.resolve(team2Id) : createTeam(team2Name, team2Players, 't2'),
         ]);
+        team1Id = newTeam1Id;
+        team2Id = newTeam2Id;
+      } else {
+        // "Veto off" doesn't need a routable team page, so don't force a
+        // pre-existing team's real ID into the config here either.
+        team1Id = undefined;
+        team2Id = undefined;
       }
 
       const response = await api.post<{ success: boolean; match?: { config: unknown } }>(
@@ -289,8 +305,10 @@ export default function ManualMatch() {
       setTeam2Name('');
       setTeam1Players([]);
       setTeam2Players([]);
+      setTeam1SourceTeamId(null);
+      setTeam2SourceTeamId(null);
       setSelectedMaps([]);
-                    setMapSides({});
+      setMapSides({});
       setServerId('');
       void loadData();
     } catch (err) {
@@ -345,11 +363,33 @@ export default function ManualMatch() {
                 onChange={(e) => setTeam1Name(e.target.value)}
                 sx={{ mb: 2 }}
               />
+              <Autocomplete
+                size="small"
+                options={allTeams}
+                getOptionLabel={(team) => team.name}
+                value={allTeams.find((tm) => tm.id === team1SourceTeamId) || null}
+                onChange={(_e, team) => {
+                  if (team) {
+                    setTeam1Name(team.name);
+                    setTeam1Players(team.players || []);
+                    setTeam1SourceTeamId(team.id);
+                  } else {
+                    setTeam1SourceTeamId(null);
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} label={t('manualMatch.loadTeam', 'Load an existing team')} />
+                )}
+                sx={{ mb: 2 }}
+              />
               <RosterEditor
                 label={t('manualMatch.team1Roster', 'Team 1 roster')}
                 players={team1Players}
                 allPlayers={allPlayers}
-                onChange={setTeam1Players}
+                onChange={(players) => {
+                  setTeam1Players(players);
+                  setTeam1SourceTeamId(null);
+                }}
               />
             </Box>
 
@@ -362,11 +402,33 @@ export default function ManualMatch() {
                 onChange={(e) => setTeam2Name(e.target.value)}
                 sx={{ mb: 2 }}
               />
+              <Autocomplete
+                size="small"
+                options={allTeams}
+                getOptionLabel={(team) => team.name}
+                value={allTeams.find((tm) => tm.id === team2SourceTeamId) || null}
+                onChange={(_e, team) => {
+                  if (team) {
+                    setTeam2Name(team.name);
+                    setTeam2Players(team.players || []);
+                    setTeam2SourceTeamId(team.id);
+                  } else {
+                    setTeam2SourceTeamId(null);
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} label={t('manualMatch.loadTeam', 'Load an existing team')} />
+                )}
+                sx={{ mb: 2 }}
+              />
               <RosterEditor
                 label={t('manualMatch.team2Roster', 'Team 2 roster')}
                 players={team2Players}
                 allPlayers={allPlayers}
-                onChange={setTeam2Players}
+                onChange={(players) => {
+                  setTeam2Players(players);
+                  setTeam2SourceTeamId(null);
+                }}
               />
             </Box>
           </Box>
