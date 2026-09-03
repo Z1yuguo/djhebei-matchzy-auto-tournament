@@ -23,8 +23,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AddIcon from '@mui/icons-material/Add';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -167,6 +172,7 @@ export default function ManualMatch() {
   const [creating, setCreating] = useState(false);
   const [loadingSlug, setLoadingSlug] = useState<string | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [previewConfig, setPreviewConfig] = useState<{ slug: string; config: unknown } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -223,26 +229,35 @@ export default function ManualMatch() {
       const toPlayerMap = (players: RosterPlayer[]) =>
         Object.fromEntries(players.map((p) => [p.steamId, p.name]));
 
-      await api.post('/api/matches', {
-        slug,
-        serverId: serverId || undefined,
-        config: {
-          matchid: 0,
-          skip_veto: true,
-          players_per_team: playersPerTeam,
-          team1: { name: team1Name.trim(), players: toPlayerMap(team1Players) },
-          team2: { name: team2Name.trim(), players: toPlayerMap(team2Players) },
-          num_maps: bestOf,
-          maplist: selectedMaps,
-          vetoDisabled: !vetoEnabled,
-          ...(vetoEnabled
-            ? {}
-            : { map_sides: selectedMaps.map((mapId) => mapSides[mapId] || 'knife') }),
-          cvars: { matchzy_demo_recording_enabled: recordDemo ? 1 : 0 },
-        },
-      });
+      const response = await api.post<{ success: boolean; match?: { config: unknown } }>(
+        '/api/matches',
+        {
+          slug,
+          serverId: serverId || undefined,
+          config: {
+            matchid: 0,
+            skip_veto: true,
+            players_per_team: playersPerTeam,
+            team1: { name: team1Name.trim(), players: toPlayerMap(team1Players) },
+            team2: { name: team2Name.trim(), players: toPlayerMap(team2Players) },
+            num_maps: bestOf,
+            maplist: selectedMaps,
+            vetoDisabled: !vetoEnabled,
+            ...(vetoEnabled
+              ? {}
+              : { map_sides: selectedMaps.map((mapId) => mapSides[mapId] || 'knife') }),
+            cvars: { matchzy_demo_recording_enabled: recordDemo ? 1 : 0 },
+          },
+        }
+      );
 
       showSuccess(t('manualMatch.success.created', 'Match created'));
+      if (response.match) {
+        // Show the *actual* stored config (server-applied defaults included -
+        // cvars, mp_maxrounds, admins, etc. - not just what we submitted) so
+        // there's something meaningful to verify before loading it.
+        setPreviewConfig({ slug, config: response.match.config });
+      }
       setTeam1Name('');
       setTeam2Name('');
       setTeam1Players([]);
@@ -592,6 +607,55 @@ export default function ManualMatch() {
           }}
         />
       )}
+
+      <Dialog
+        open={!!previewConfig}
+        onClose={() => setPreviewConfig(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {t('manualMatch.previewTitle', 'MatchZy config — {{slug}}', {
+            slug: previewConfig?.slug || '',
+          })}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            {t(
+              'manualMatch.previewDescription',
+              'This is the exact config stored for this match, including defaults the server applied (cvars, round limits, etc.) - the same JSON MatchZy will read when the match loads.'
+            )}
+          </Typography>
+          <TextField
+            value={previewConfig ? JSON.stringify(previewConfig.config, null, 2) : ''}
+            multiline
+            fullWidth
+            minRows={16}
+            maxRows={28}
+            slotProps={{ htmlInput: { readOnly: true } }}
+            sx={{
+              mt: 1,
+              '& textarea': { fontFamily: 'Menlo, Monaco, "Courier New", monospace', fontSize: '0.8rem' },
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            startIcon={<ContentCopyIcon fontSize="small" />}
+            onClick={() => {
+              if (previewConfig) {
+                void navigator.clipboard.writeText(JSON.stringify(previewConfig.config, null, 2));
+                showSuccess(t('manualMatch.previewCopied', 'Copied to clipboard'));
+              }
+            }}
+          >
+            {t('manualMatch.previewCopy', 'Copy')}
+          </Button>
+          <Button onClick={() => setPreviewConfig(null)}>
+            {t('manualMatch.previewClose', 'Close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
