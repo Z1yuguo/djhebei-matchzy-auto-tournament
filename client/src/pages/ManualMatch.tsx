@@ -172,7 +172,12 @@ export default function ManualMatch() {
   const [creating, setCreating] = useState(false);
   const [loadingSlug, setLoadingSlug] = useState<string | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [previewConfig, setPreviewConfig] = useState<{ slug: string; config: unknown } | null>(null);
+  const [previewConfig, setPreviewConfig] = useState<{
+    slug: string;
+    config: unknown;
+    team1Id?: string;
+    team2Id?: string;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -229,6 +234,28 @@ export default function ManualMatch() {
       const toPlayerMap = (players: RosterPlayer[]) =>
         Object.fromEntries(players.map((p) => [p.steamId, p.name]));
 
+      // Web veto happens on each team's public page (/team/:teamId), which
+      // requires a real row in the teams table - an inline name/roster in
+      // the match config alone isn't reachable there. Only create real teams
+      // when veto is actually on; "veto off" doesn't need a routable page.
+      let team1Id: string | undefined;
+      let team2Id: string | undefined;
+      if (vetoEnabled) {
+        const suffix = Date.now().toString(36);
+        const createTeam = async (name: string, players: RosterPlayer[], tag: string) => {
+          const id = `${slugify(name)}_${suffix}_${tag}`;
+          const res = await api.post<{ success: boolean; team?: { id: string } }>(
+            '/api/teams?upsert=true',
+            { id, name: name.trim(), players }
+          );
+          return res.team?.id || id;
+        };
+        [team1Id, team2Id] = await Promise.all([
+          createTeam(team1Name, team1Players, 't1'),
+          createTeam(team2Name, team2Players, 't2'),
+        ]);
+      }
+
       const response = await api.post<{ success: boolean; match?: { config: unknown } }>(
         '/api/matches',
         {
@@ -238,8 +265,8 @@ export default function ManualMatch() {
             matchid: 0,
             skip_veto: true,
             players_per_team: playersPerTeam,
-            team1: { name: team1Name.trim(), players: toPlayerMap(team1Players) },
-            team2: { name: team2Name.trim(), players: toPlayerMap(team2Players) },
+            team1: { id: team1Id, name: team1Name.trim(), players: toPlayerMap(team1Players) },
+            team2: { id: team2Id, name: team2Name.trim(), players: toPlayerMap(team2Players) },
             num_maps: bestOf,
             maplist: selectedMaps,
             vetoDisabled: !vetoEnabled,
@@ -256,7 +283,7 @@ export default function ManualMatch() {
         // Show the *actual* stored config (server-applied defaults included -
         // cvars, mp_maxrounds, admins, etc. - not just what we submitted) so
         // there's something meaningful to verify before loading it.
-        setPreviewConfig({ slug, config: response.match.config });
+        setPreviewConfig({ slug, config: response.match.config, team1Id, team2Id });
       }
       setTeam1Name('');
       setTeam2Name('');
@@ -626,6 +653,24 @@ export default function ManualMatch() {
               'This is the exact config stored for this match, including defaults the server applied (cvars, round limits, etc.) - the same JSON MatchZy will read when the match loads.'
             )}
           </Typography>
+
+          {previewConfig?.team1Id && previewConfig?.team2Id && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                {t(
+                  'manualMatch.previewVetoLinks',
+                  'Send each team this link to ban/pick maps in the browser — no in-game veto happens with this format.'
+                )}
+              </Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                {t('manualMatch.team1Name', 'Team 1')}: {window.location.origin}/team/{previewConfig.team1Id}
+              </Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                {t('manualMatch.team2Name', 'Team 2')}: {window.location.origin}/team/{previewConfig.team2Id}
+              </Typography>
+            </Alert>
+          )}
+
           <TextField
             value={previewConfig ? JSON.stringify(previewConfig.config, null, 2) : ''}
             multiline
