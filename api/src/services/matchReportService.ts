@@ -1,5 +1,6 @@
 import { db } from '../config/database';
 import { getMatchDetailsBySlug } from '../routes/matches';
+import { calculateHltvRating } from '../utils/hltvRating';
 
 export interface MatchReport {
   slug: string;
@@ -33,6 +34,13 @@ export interface MatchReport {
     kast: number | null;
     mvps: number | null;
     score: number | null;
+    /**
+     * Community-reverse-engineered HLTV Rating 2.0 approximation - a pure
+     * per-match performance score, independent of win/loss (unlike this
+     * app's ELO/Skill Rating, which is win/loss driven). Null if we don't
+     * have rounds-played data to compute it from.
+     */
+    hltvRating: number | null;
   }[];
 }
 
@@ -115,6 +123,17 @@ export async function buildMatchReport(slug: string): Promise<MatchReport | null
       kast: row.kast,
       mvps: row.mvps,
       score: row.score,
+      hltvRating:
+        row.rounds_played && row.rounds_played > 0
+          ? calculateHltvRating({
+              kills: row.kills || 0,
+              deaths: row.deaths || 0,
+              assists: row.assists || 0,
+              kast: row.kast || 0,
+              adr: row.adr || 0,
+              roundsPlayed: row.rounds_played,
+            })
+          : null,
     })),
   };
 }

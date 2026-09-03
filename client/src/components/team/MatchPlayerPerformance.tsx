@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { PlayerName } from '../player/PlayerName';
 import { getPlayerPageUrl } from '../../utils/playerLinks';
+import { calculateHltvRating } from '../../utils/hltvRating';
 import type { MatchLiveStats } from '../../types';
 
 type PlayerLine = NonNullable<MatchLiveStats['playerStats']>['team1'][number];
@@ -39,6 +40,18 @@ function formatAdr(player: PlayerLine): string {
   return Math.round(adr).toString();
 }
 
+function formatRating(player: PlayerLine): string {
+  const rating = calculateHltvRating({
+    kills: player.kills,
+    deaths: player.deaths,
+    assists: player.assists,
+    kast: player.kast,
+    adr: getAdrValue(player),
+    roundsPlayed: player.roundsPlayed,
+  });
+  return rating === null ? '—' : rating.toFixed(2);
+}
+
 function renderTable(
   rows: PlayerLine[],
   accent: 'primary' | 'error',
@@ -57,6 +70,7 @@ function renderTable(
             <TableCell align="right">A</TableCell>
             <TableCell align="right">ADR</TableCell>
             <TableCell align="right">MVP</TableCell>
+            <TableCell align="right">Rating</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -112,6 +126,7 @@ function renderTable(
                 <TableCell align="right">{player.assists}</TableCell>
                 <TableCell align="right">{formatAdr(player)}</TableCell>
                 <TableCell align="right">{player.mvps ?? 0}</TableCell>
+                <TableCell align="right">{formatRating(player)}</TableCell>
               </TableRow>
               );
             })

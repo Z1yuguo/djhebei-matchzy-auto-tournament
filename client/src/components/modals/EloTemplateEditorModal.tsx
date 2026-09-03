@@ -262,32 +262,53 @@ export default function EloTemplateEditorModal({
                           {STAT_DESCRIPTIONS[stat]}
                         </Typography>
                       </Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          minWidth: 60,
-                          textAlign: 'right',
-                          fontFamily: 'monospace',
-                          fontWeight: 600,
-                          color: weights[stat] && weights[stat]! > 0 ? 'success.main' : weights[stat] && weights[stat]! < 0 ? 'error.main' : 'text.secondary',
+                      <TextField
+                        type="number"
+                        size="small"
+                        value={weights[stat] ?? 0}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === '' || raw === '-') {
+                            handleWeightChange(stat, 0);
+                            return;
+                          }
+                          const parsed = Number(raw);
+                          if (!Number.isNaN(parsed)) {
+                            handleWeightChange(stat, Math.min(2, Math.max(-2, parsed)));
+                          }
                         }}
-                      >
-                        {weights[stat] !== undefined ? (weights[stat]! > 0 ? '+' : '') + weights[stat] : '0'}
-                      </Typography>
+                        disabled={template?.id === 'pure-win-loss'}
+                        slotProps={{
+                          htmlInput: { step: 0.01, min: -2, max: 2, style: { textAlign: 'right' } },
+                        }}
+                        sx={{
+                          width: 90,
+                          '& input': {
+                            fontFamily: 'monospace',
+                            fontWeight: 600,
+                            color:
+                              weights[stat] && weights[stat]! > 0
+                                ? 'success.main'
+                                : weights[stat] && weights[stat]! < 0
+                                ? 'error.main'
+                                : 'text.secondary',
+                          },
+                        }}
+                      />
                     </Box>
                     <Slider
                       value={weights[stat] || 0}
                       onChange={(_, value) => handleWeightChange(stat, value as number)}
                       min={-2}
                       max={2}
-                      step={0.1}
+                      step={0.01}
                       marks={[
                         { value: -2, label: '-2' },
                         { value: 0, label: '0' },
                         { value: 2, label: '+2' },
                       ]}
                       valueLabelDisplay="auto"
-                      valueLabelFormat={(value) => (value > 0 ? '+' : '') + value.toFixed(1)}
+                      valueLabelFormat={(value) => (value > 0 ? '+' : '') + value.toFixed(2)}
                       disabled={template?.id === 'pure-win-loss'}
                     />
                   </Box>
