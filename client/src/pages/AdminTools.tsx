@@ -29,6 +29,7 @@ import { useAdminCommands } from '../hooks/useAdminCommands';
 import { ServerEventsMonitor } from '../components/admin/ServerEventsMonitor';
 import { LogViewer } from '../components/admin/LogViewer';
 import { MatchConfigEditor } from '../components/admin/MatchConfigEditor';
+import { GitHubBackupPanel } from '../components/admin/GitHubBackupPanel';
 import { useSnackbar } from '../contexts/SnackbarContext';
 import { useTranslation } from 'react-i18next';
 
@@ -460,6 +461,18 @@ const AdminTools: React.FC = () => {
         </AccordionSummary>
         <AccordionDetails>
           <MatchConfigEditor />
+        </AccordionDetails>
+      </Accordion>
+
+      {/* GitHub Backup */}
+      <Accordion sx={{ mt: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6">
+            {t('backup.title', 'GitHub Backup')}
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <GitHubBackupPanel />
         </AccordionDetails>
       </Accordion>
 

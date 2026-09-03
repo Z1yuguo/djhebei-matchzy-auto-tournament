@@ -17,6 +17,7 @@ import { normalizeConfigPlayers } from '../utils/playerTransform';
 import { teamService } from '../services/teamService';
 import { playerService } from '../services/playerService';
 import { getMapResults } from '../services/matchMapResultService';
+import { buildMatchReport } from '../services/matchReportService';
 import { serverAllocationTracker } from '../services/serverAllocationTracker';
 
 const router = Router();
@@ -26,7 +27,7 @@ const router = Router();
  * This mirrors the shape used by GET /api/matches so team pages and history views
  * get full details, not just raw config.
  */
-async function getMatchDetailsBySlug(slug: string): Promise<MatchListItem | null> {
+export async function getMatchDetailsBySlug(slug: string): Promise<MatchListItem | null> {
   // Fetch match with team and server info
   const row = await db.queryOneAsync<
     DbMatchRow & {
@@ -1106,87 +1107,14 @@ router.get('/:slug', async (req: Request, res: Response) => {
 router.get('/:slug/report', requireAuth, async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
-    const match = await getMatchDetailsBySlug(slug);
+    const report = await buildMatchReport(slug);
 
-    if (!match) {
+    if (!report) {
       return res.status(404).json({
         success: false,
         error: `Match '${slug}' not found`,
       });
     }
-
-    const playerRows = await db.queryAsync<{
-      player_id: string;
-      name: string | null;
-      avatar_url: string | null;
-      team: string;
-      won_match: boolean;
-      adr: number | null;
-      kills: number | null;
-      deaths: number | null;
-      assists: number | null;
-      headshots: number | null;
-      flash_assists: number | null;
-      utility_damage: number | null;
-      kast: number | null;
-      mvps: number | null;
-      score: number | null;
-      rounds_played: number | null;
-    }>(
-      `SELECT pms.*, p.name, p.avatar_url
-         FROM player_match_stats pms
-         LEFT JOIN players p ON p.id = pms.player_id
-        WHERE pms.match_slug = ?
-        ORDER BY pms.team, pms.score DESC NULLS LAST`,
-      [slug]
-    );
-
-    const rawConfig = match.config as
-      | { num_maps?: number; team1?: { name?: string; tag?: string }; team2?: { name?: string; tag?: string } }
-      | undefined;
-
-    const report = {
-      slug: match.slug,
-      status: match.status,
-      bestOf: rawConfig?.num_maps ?? null,
-      createdAt: match.createdAt,
-      loadedAt: match.loadedAt ?? null,
-      team1: {
-        name: match.team1?.name ?? rawConfig?.team1?.name ?? null,
-        tag: match.team1?.tag ?? rawConfig?.team1?.tag ?? null,
-        players: (match.team1Players || []).map((p) => ({ steamId: p.steamId, name: p.name })),
-      },
-      team2: {
-        name: match.team2?.name ?? rawConfig?.team2?.name ?? null,
-        tag: match.team2?.tag ?? rawConfig?.team2?.tag ?? null,
-        players: (match.team2Players || []).map((p) => ({ steamId: p.steamId, name: p.name })),
-      },
-      maps: (match.mapResults || []).map((m) => ({
-        mapNumber: m.mapNumber,
-        mapName: m.mapName ?? null,
-        team1Score: m.team1Score,
-        team2Score: m.team2Score,
-        winner: m.winnerTeam,
-      })),
-      players: playerRows.map((row) => ({
-        steamId: row.player_id,
-        name: row.name,
-        avatar: row.avatar_url,
-        team: row.team,
-        wonMatch: row.won_match,
-        roundsPlayed: row.rounds_played,
-        kills: row.kills,
-        deaths: row.deaths,
-        assists: row.assists,
-        headshots: row.headshots,
-        flashAssists: row.flash_assists,
-        utilityDamage: row.utility_damage,
-        adr: row.adr,
-        kast: row.kast,
-        mvps: row.mvps,
-        score: row.score,
-      })),
-    };
 
     return res.json({ success: true, report });
   } catch (error) {
