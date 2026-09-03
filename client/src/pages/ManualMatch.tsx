@@ -168,6 +168,7 @@ export default function ManualMatch() {
   const [allPlayers, setAllPlayers] = useState<PlayerDetail[]>([]);
   const [allTeams, setAllTeams] = useState<{ id: string; name: string; players?: RosterPlayer[] }[]>([]);
   const [allMaps, setAllMaps] = useState<{ id: string; displayName: string }[]>([]);
+  const [allMapPools, setAllMapPools] = useState<{ id: number; name: string; mapIds: string[] }[]>([]);
   const [availableServers, setAvailableServers] = useState<
     { id: string; name: string; online: boolean; allocatable: boolean }[]
   >([]);
@@ -184,12 +185,15 @@ export default function ManualMatch() {
 
   const loadData = useCallback(async () => {
     try {
-      const [playersRes, teamsRes, mapsRes, matchesRes, availabilityRes] = await Promise.all([
+      const [playersRes, teamsRes, mapsRes, mapPoolsRes, matchesRes, availabilityRes] = await Promise.all([
         api.get<PlayersResponse>('/api/players/selection'),
         api.get<{ success: boolean; teams?: { id: string; name: string; players?: RosterPlayer[] }[] }>(
           '/api/teams'
         ),
         api.get<MapsResponse>('/api/maps'),
+        api.get<{ success: boolean; mapPools?: { id: number; name: string; mapIds: string[] }[] }>(
+          '/api/map-pools?enabled=true'
+        ),
         api.get<MatchesResponse>('/api/matches'),
         api.get<{
           success: boolean;
@@ -199,6 +203,7 @@ export default function ManualMatch() {
       setAllPlayers(playersRes.players || []);
       setAllTeams(teamsRes.teams || []);
       setAllMaps(mapsRes.maps || []);
+      setAllMapPools(mapPoolsRes.mapPools || []);
       setManualMatches((matchesRes.matches || []).filter((m) => m.round === 0));
       setAvailableServers(availabilityRes.servers || []);
     } catch {
@@ -526,6 +531,33 @@ export default function ManualMatch() {
               </Typography>
             </Box>
           </Box>
+
+          {vetoEnabled && allMapPools.length > 0 && (
+            <Box mt={2}>
+              <Autocomplete
+                size="small"
+                options={allMapPools}
+                getOptionLabel={(pool) => pool.name}
+                value={null}
+                onChange={(_e, pool) => {
+                  if (pool) {
+                    setSelectedMaps(pool.mapIds);
+                    setMapSides({});
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('manualMatch.loadMapPool', 'Load a map pool')}
+                    helperText={t(
+                      'manualMatch.loadMapPoolHelper',
+                      'Manage pools (e.g. Active Duty) from Maps & Map Pools in the sidebar.'
+                    )}
+                  />
+                )}
+              />
+            </Box>
+          )}
 
           <Box mt={2}>
             <Autocomplete
