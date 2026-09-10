@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth';
 import { matchAllocationService } from '../services/matchAllocationService';
 import { serverInitializationService } from '../services/serverInitializationService';
 import { settingsService } from '../services/settingsService';
+import { listPluginBackups, rollbackPlugins } from '../services/csmPluginBackupService';
 import { log } from '../utils/logger';
 
 const router = Router();
@@ -482,6 +483,46 @@ router.post('/:id/reset-initialization', async (req: Request, res: Response) => 
       success: false,
       error: message,
     });
+  }
+});
+
+/**
+ * GET /api/servers/:id/plugin-backups
+ * List the plugin (Metamod/CounterStrikeSharp/MatchZy) backups csm has saved
+ * on this server's host, most recent first. Requires SSH console to be
+ * configured for the server.
+ */
+router.get('/:id/plugin-backups', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const backups = await listPluginBackups(id);
+    return res.json({ success: true, backups });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to list plugin backups';
+    const statusCode = message.includes('not found') ? 404 : 500;
+    log.error('Error listing plugin backups:', error as Error);
+    return res.status(statusCode).json({ success: false, error: message });
+  }
+});
+
+/**
+ * POST /api/servers/:id/plugin-backups/rollback
+ * Restore a plugin backup (body: { backupId?: string }, omit for the most
+ * recent one) and redeploy it to every server csm manages on that host,
+ * restarting them. Requires the SSH user to have passwordless sudo for
+ * `csm rollback-plugins` on the host - see csmPluginBackupService.ts.
+ */
+router.post('/:id/plugin-backups/rollback', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { backupId } = req.body as { backupId?: string };
+    const result = await rollbackPlugins(id, backupId);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to roll back plugins';
+    const statusCode = message.includes('not found') ? 404 : message.includes('Invalid backup id') ? 400 : 500;
+    log.error('Error rolling back plugins:', error as Error);
+    return res.status(statusCode).json({ success: false, error: message });
   }
 });
 

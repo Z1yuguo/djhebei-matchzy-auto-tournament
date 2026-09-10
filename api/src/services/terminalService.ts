@@ -12,8 +12,9 @@
  * from a server-side integer (`server.csmIndex`), never from client input.
  */
 
-import { Client, type ClientChannel } from 'ssh2';
+import { type ClientChannel } from 'ssh2';
 import { serverService } from './serverService';
+import { connectSSH } from './sshClient';
 import { log } from '../utils/logger';
 
 export interface TerminalSize {
@@ -53,32 +54,9 @@ export class TerminalService {
       throw new Error('Invalid csm server index configured for this server.');
     }
 
-    const host = server.sshHost || server.host;
-    const port = server.sshPort || 22;
-    const username = server.sshUsername as string;
-
-    const conn = new Client();
-
-    const connectPromise = new Promise<void>((resolve, reject) => {
-      conn.on('ready', () => resolve());
-      conn.on('error', (err) => reject(err));
-      const connectConfig: Record<string, unknown> = {
-        host,
-        port,
-        username,
-        readyTimeout: 15000,
-      };
-      if (server.sshAuthMethod === 'private_key') {
-        connectConfig.privateKey = server.sshPrivateKey || undefined;
-        if (server.sshPassphrase) connectConfig.passphrase = server.sshPassphrase;
-      } else {
-        connectConfig.password = server.sshPassword || undefined;
-      }
-      conn.connect(connectConfig);
-    });
-
+    let conn;
     try {
-      await connectPromise;
+      conn = await connectSSH(server);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`SSH connection failed: ${message}`);

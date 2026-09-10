@@ -79,7 +79,9 @@
     },
     "checkServerLogs": "Check the game server console/logs to see if MatchZy receives config and sends events.",
     "consoleTooltip": "Open live server console (SSH)",
-    "consoleDialogTitle": "Console — {{name}}"
+    "consoleDialogTitle": "Console — {{name}}",
+    "pluginBackupsTooltip": "Plugin backups / rollback",
+    "pluginBackupsDialogTitle": "Plugin backups — {{name}}"
   },
   "serverModal": {
     "titleCreate": "Add Server",

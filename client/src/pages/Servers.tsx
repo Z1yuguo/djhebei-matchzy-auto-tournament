@@ -13,6 +13,7 @@ import UpdateIcon from '@mui/icons-material/Update';
 import DnsIcon from '@mui/icons-material/Dns';
 import ReplayIcon from '@mui/icons-material/Replay';
 import TerminalIcon from '@mui/icons-material/Terminal';
+import RestoreIcon from '@mui/icons-material/Restore';
 import CloseIcon from '@mui/icons-material/Close';
 import { Dialog, DialogTitle, DialogContent } from '@mui/material';
 import { api } from '../utils/api';
@@ -22,6 +23,7 @@ import MatchDetailsModal from '../components/modals/MatchDetailsModal';
 import { EmptyState } from '../components/shared/EmptyState';
 import ConfirmDialog from '../components/modals/ConfirmDialog';
 import { ServerTerminal } from '../components/admin/ServerTerminal';
+import { ServerPluginBackups } from '../components/admin/ServerPluginBackups';
 import type { Match, Server, ServersResponse, ServerStatusResponse, MatchesResponse } from '../types';
 import { useSnackbar } from '../contexts/SnackbarContext';
 import { getRoundLabel } from '../utils/matchUtils';
@@ -35,6 +37,7 @@ export default function Servers() {
   const [modalOpen, setModalOpen] = useState(false);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [terminalServer, setTerminalServer] = useState<Server | null>(null);
+  const [pluginBackupsServer, setPluginBackupsServer] = useState<Server | null>(null);
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -1583,6 +1586,22 @@ export default function Servers() {
                           </IconButton>
                         </Tooltip>
                       )}
+                      {server.sshConsoleEnabled && (
+                        <Tooltip title={t('serversPage.pluginBackupsTooltip', 'Plugin backups / rollback')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => setPluginBackupsServer(server)}
+                            sx={{
+                              ml: 0.5,
+                              '&:hover': {
+                                backgroundColor: 'action.hover',
+                              },
+                            }}
+                          >
+                            <RestoreIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Box>
 
                     <Box display="flex" flexDirection="column" gap={0.5} mb={2}>
@@ -1860,6 +1879,29 @@ export default function Servers() {
           {terminalServer && (
             <ServerTerminal serverId={terminalServer.id} active={!!terminalServer} />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!pluginBackupsServer}
+        onClose={() => setPluginBackupsServer(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            {t('serversPage.pluginBackupsDialogTitle', 'Plugin backups — {{name}}', {
+              name: pluginBackupsServer?.name || '',
+            })}
+          </Typography>
+          <IconButton onClick={() => setPluginBackupsServer(null)} size="small" aria-label="close">
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pb: 3 }}>
+          {pluginBackupsServer && <ServerPluginBackups serverId={pluginBackupsServer.id} />}
         </DialogContent>
       </Dialog>
 
